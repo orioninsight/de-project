@@ -1,12 +1,11 @@
-#creates policy document locally
+#creates policy document locally for ingestion_lambda to access required S3 resources
 data "aws_iam_policy_document" "ingestion_lambda_code_bucket_access" {
   statement {
 
     actions = ["s3:GetObject"]
 
     resources = [
-      "${aws_s3_bucket.code_bucket.arn}/*",
-      "${aws_s3_bucket.data_bucket.arn}/*",
+      "${aws_s3_bucket.code_bucket.arn}/ingestion_lambda/*"
     ]
   }
 }
@@ -17,3 +16,20 @@ resource "aws_iam_policy" "ingestion_lambda_code_bucket_access" {
   policy      = data.aws_iam_policy_document.ingestion_lambda_code_bucket_access.json
 }
 
+#creates policy locally to allow ingestion_lambda lambda to utilise log group
+data "aws_iam_policy_document" "ingestion_lambda_cw_document" {
+  statement {
+
+    actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
+
+    resources = [
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.ingestion_lambda_handler}:*"
+    ]
+  }
+}
+
+# creates above policy in IAM
+resource "aws_iam_policy" "cw_policy" {
+  name_prefix = "cw-policy-${var.ingestion_lambda_handler}"
+  policy      = data.aws_iam_policy_document.ingestion_lambda_cw_document.json
+}
