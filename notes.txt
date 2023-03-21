@@ -1,0 +1,49 @@
+Personal sandbox!
+
+From Nasrin:
+Name of python file
+Location of lambda file
+handler name 
+
+We need to get them, the name of the s3 ingestion_zone bucket!
+
+    - variables? 
+    - secrets? 
+
+
+#25
++ zip up source files (maybe change to folder)
++ create S3 object in code bucket from source files
+
+IAM
+
++ make a log group manually via terraform for the lambda 
+
+- policy that will allow lambda to write to created cloudwatch log group
+
+- policy that will allow lambda to access code bucket
+    - its own folder/prefix only
+
+- policy that will allow lambda to access ingestion bucket
+
+- make lambda role
+- attach policies to role
+
+Lambda 
+
+- create lambda
+    - specifying S3 object in code bucket as source code
+    - specify the log group
+    - specify our created role
+    - define lambda handler function 
+
+
+
+#19
+Add lambda permission for event bridge to run lambda on schedule
+Add event bridge schedule
+
+
+
+
+
