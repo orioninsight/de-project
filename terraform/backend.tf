@@ -1,7 +1,7 @@
 terraform {
     backend "s3" {
-        bucket = "nc-terraform-state-1679394142"
-        key = "s3_file_reader/terraform.tfstate"
+        bucket = "nc-terraform-state-1679397451"
+        key = "tote-application/terraform.tfstate"
         region = "us-east-1"
     }
 }
