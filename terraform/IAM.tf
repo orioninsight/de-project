@@ -12,7 +12,7 @@ data "aws_iam_policy_document" "ingestion_lambda_code_bucket_access" {
 
 #creates above policy in IAM
 resource "aws_iam_policy" "ingestion_lambda_code_bucket_access" {
-  name_prefix = "s3-access-policy-${var.ingestion_lambda_name}"
+  name_prefix = "s3-access-policy-${var.ingestion_lambda_name}-"
   policy      = data.aws_iam_policy_document.ingestion_lambda_code_bucket_access.json
 }
 
@@ -23,13 +23,13 @@ data "aws_iam_policy_document" "ingestion_lambda_cw_document" {
     actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
 
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.ingestion_lambda_handler}:*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${resource.aws_cloudwatch_log_group.ingestion_lambda_log.name}:*"
     ]
   }
 }
 
 # creates above policy in IAM
 resource "aws_iam_policy" "cw_policy" {
-  name_prefix = "cw-policy-${var.ingestion_lambda_handler}"
+  name_prefix = "cw-policy-${var.ingestion_lambda_name}-"
   policy      = data.aws_iam_policy_document.ingestion_lambda_cw_document.json
 }
