@@ -20,7 +20,7 @@ data "aws_iam_policy_document" "ingestion_lambda_code_bucket_access" {
 
 #creates above policy in IAM
 resource "aws_iam_policy" "ingestion_lambda_code_bucket_access" {
-  name_prefix = "s3-access-policy-${var.ingestion_lambda_name}-"
+  name_prefix = "s3-access-policy-ingestion-lambda-"
   policy      = data.aws_iam_policy_document.ingestion_lambda_code_bucket_access.json
 }
 
@@ -38,13 +38,13 @@ data "aws_iam_policy_document" "ingestion_lambda_cw_document" {
 
 # creates above policy in IAM
 resource "aws_iam_policy" "ingestion_lamba_cw_policy" {
-  name_prefix = "cw-policy-${var.ingestion_lambda_name}-"
+  name_prefix = "cw-policy-ingestion-lambda-"
   policy      = data.aws_iam_policy_document.ingestion_lambda_cw_document.json
 }
 
 # creates lambda role 
 resource "aws_iam_role" "ingestion_lambda_role" {
-  name_prefix        = "role-${var.ingestion_lambda_name}-"
+  name_prefix        = "role-ingestion-lambda-"
   assume_role_policy = <<EOF
     {
         "Version": "2012-10-17",
