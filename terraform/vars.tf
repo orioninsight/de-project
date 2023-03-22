@@ -13,13 +13,13 @@ variable "ingestion_zone_bucket_prefix" {
 #ingestion zone lambda name without suffix 
 variable "ingestion_lambda_name" {
   type    = string
-  default = "extract_db"
+  default = "extract_db_demo"
 }
 
 #lambda handler for ingestion zone lambda
 variable "ingestion_lambda_handler" {
   type    = string
-  default = "extract_db.extract_db_handler"
+  default = "extract_db.extract_db_handler_demo"
 }
 
 
