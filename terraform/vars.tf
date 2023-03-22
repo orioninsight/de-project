@@ -22,6 +22,11 @@ variable "ingestion_lambda_handler" {
   default = "extract_db.extract_db_handler"
 }
 
+# email for ingestion zone lambda alerting
+variable "email" {
+  type    = string
+  default = "orioninsight23@gmail.com"
+}
 
 
 
