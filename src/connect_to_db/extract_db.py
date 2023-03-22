@@ -4,7 +4,7 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 import json
-from src.connection import conn
+from src.connect_to_db.connection import conn
 
 logger = logging.getLogger('MyLogger')
 logger.setLevel(logging.INFO)
@@ -69,6 +69,19 @@ def extract_staff():
     rows = conn.run(query_string)
     columns = [meta["name"]for meta in conn.columns]
     return create_dicts(columns,rows)
+
+def extract_department():
+    query_string = "SELECT department_id,department_name,location,manager,created_at,last_updated FROM department"
+    rows = conn.run(query_string)
+    columns = [meta["name"]for meta in conn.columns]
+    return create_dicts(columns,rows)
+
+def extract_purchase_order():
+    query_string = "SELECT purchase_order_id,created_at,last_updated,staff_id,counterparty_id,item_code,item_quantity,item_unit_price,currency_id,agreed_delivery_date,agreed_payment_date,agreed_delivery_location_id From purchase_order"
+    rows = conn.run(query_string)
+    columns = [meta["name"]for meta in conn.columns]
+    return create_dicts(columns,rows)
+    
 
     
     

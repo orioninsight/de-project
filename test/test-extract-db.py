@@ -1,10 +1,10 @@
-from src.extract_db import (get_db_credentials,extract_db_handler,extract_counter_party,extract_address,extract_design,extract_sales_order,extract_transaction,extract_payment_type,extract_payment,extract_currency,extract_staff)
+from src.connect_to_db.extract_db import (get_db_credentials,extract_db_handler,extract_counter_party,extract_address,extract_design,extract_sales_order,extract_transaction,extract_payment_type,extract_payment,extract_currency,extract_staff,extract_department,extract_purchase_order)
 import pytest
 import os
 import boto3
 from moto import mock_secretsmanager
 import json
-from src.connection import conn
+from src.connect_to_db.connection import conn
 
 @pytest.fixture(scope="function")
 def aws_credentials():
@@ -49,17 +49,23 @@ def test_extract_from_design_table():
 def test_extract_from_sales_order_table():
     assert set(extract_sales_order()[0].keys()) == {"sales_order_id","created_at","last_updated","design_id","staff_id","counterparty_id","units_sold","unit_price","currency_id","agreed_delivery_date","agreed_payment_date","agreed_delivery_location_id"}
     
-def test_extract_from_transaction():
+def test_extract_from_transaction_table():
     assert set(extract_transaction()[0].keys()) == {"transaction_id","transaction_type","sales_order_id","purchase_order_id","created_at","last_updated"}
     
-def test_extract_from_payment_type():
+def test_extract_from_payment_type_table():
     assert set(extract_payment_type()[0].keys()) == {"payment_type_id","payment_type_name","created_at","last_updated"}
     
 def test_extract_from_payment_table():
     assert set(extract_payment()[0].keys()) == {"payment_id","created_at","last_updated","transaction_id","counterparty_id","payment_amount","currency_id","payment_type_id","paid","payment_date","company_ac_number","counterparty_ac_number"}
     
-def test_extract_from_currency():
+def test_extract_from_currency_table():
     assert set(extract_currency()[0].keys()) == {"currency_id","currency_code","created_at","last_updated"}
     
-def test_extract_from_staff():
+def test_extract_from_staff_table():
     assert set(extract_staff()[0].keys()) =={"staff_id","first_name","last_name","department_id","email_address","created_at","last_updated"}
+    
+def test_extract_from_department_table():
+    assert set(extract_department()[0].keys()) == {"department_id","department_name","location","manager","created_at","last_updated"}
+    
+def test_extract_from_purchase_order_table():
+    assert set(extract_purchase_order()[0].keys()) == {"purchase_order_id","created_at","last_updated","staff_id","counterparty_id","item_code","item_quantity","item_unit_price","currency_id","agreed_delivery_date","agreed_payment_date","agreed_delivery_location_id"}
