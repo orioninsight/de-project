@@ -132,4 +132,6 @@ dmypy.json
 .terraform*
 
 secrets.txt
-secrets.txt
+_env.py
+venv/*
+
