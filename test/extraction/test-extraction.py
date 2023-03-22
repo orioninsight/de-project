@@ -1,5 +1,5 @@
 from src.extraction.extract_db import (
-    get_db_credentials, extract_db_handler)
+    get_db_credentials)
 from src.extraction.extractor import Extractor
 import pytest
 import os
