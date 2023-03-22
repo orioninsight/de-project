@@ -29,12 +29,12 @@
    terraform init
    ```
 
-8. Variables that can be changed are ingestion_lambda_name and ingestion_lambda_handler
-   - the folder structure should be src/ingestion_lambda/:ingestion_lambda.py.
-   - ingestion_lambda_name should match your lambda file name (without .py suffix)
-   - ingestion_lambda_handler should match the defined handler function e.g. ingestion_lambda.lambda_handler
+8. Variables that can be changed are ingestion_lambda_handler
+   - ingestion_lambda_handler should match the defined handler function e.g. handler.example_handler
 
-9. Run:
+9. ingestion lambda files should reside in src/ingestion_lambda/
+
+10. Run:
  ```bash
    terraform plan
    terraform apply
