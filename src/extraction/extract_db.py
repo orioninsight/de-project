@@ -7,6 +7,9 @@ import json
 from src.secret_manager.retrieve_entry import retrieve_entry
 from src.extraction.extractor import Extractor
 
+""" The logging level is set to INFO, which means that only messages of 
+    level INFO will be logged. 
+"""
 logger = logging.getLogger('MyLogger')
 logger.setLevel(logging.INFO)
 
@@ -27,6 +30,10 @@ def extract_db_handler(event, context):
 
 
 def get_db_credentials(secret_id):
+    """
+        Retrieves the credentials for a database from AWS Secrets Manager.
+        take string as argument and return a dictionary containing the database credentials. 
+    """
     sm_secret = boto3.client("secretsmanager")
     secret_string = sm_secret.get_secret_value(
         SecretId=secret_id)["SecretString"]
