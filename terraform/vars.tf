@@ -1,14 +1,29 @@
+#code bucket prefix
 variable "code_bucket_prefix" {
-    type = string
-    default = "lambda-code-"
+  type    = string
+  default = "lambda-code-"
 }
 
+#ingestion zone bucket prexfix
 variable "ingestion_zone_bucket_prefix" {
-    type = string
-    default = "ingestion-zone-"
+  type    = string
+  default = "ingestion-zone-"
 }
 
-variable "extraction_lambda_name" {
-    type = string
-    default = "extraction-lambda-"
+#ingestion zone lambda name without suffix 
+variable "ingestion_lambda_name" {
+  type    = string
+  default = "extract_db"
 }
+
+#lambda handler for ingestion zone lambda
+variable "ingestion_lambda_handler" {
+  type    = string
+  default = "extract_db.extract_db_handler"
+}
+
+
+
+
+
+
