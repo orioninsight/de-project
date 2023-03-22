@@ -1,5 +1,5 @@
 resource "aws_lambda_function" "ingestion_lambda" {
-  function_name    = var.ingestion_lambda_name
+  function_name    = "ingestion_lambda"
   role             = aws_iam_role.ingestion_lambda_role.arn
   handler          = var.ingestion_lambda_handler
   runtime          = "python3.9"
