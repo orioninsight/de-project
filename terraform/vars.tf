@@ -19,11 +19,5 @@ variable "ingestion_lambda_name" {
 #lambda handler for ingestion zone lambda
 variable "ingestion_lambda_handler" {
   type    = string
-  default = "extract_db.extract_db_handler_demo"
+  default = "extract_db_demo.extract_db_handler"
 }
-
-
-
-
-
-
