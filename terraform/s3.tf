@@ -7,7 +7,7 @@ resource "aws_s3_bucket" "ingestion_zone_bucket" {
 }
 
 resource "aws_s3_object" "ingestion_lambda_code" {
-  key    = "ingestion_lambda/${var.ingestion_lambda_name}.zip"
+  key    = "ingestion_lambda/app.zip"
   source = data.archive_file.ingestion_lambda_archive.output_path
   bucket = aws_s3_bucket.code_bucket.bucket
   depends_on = [

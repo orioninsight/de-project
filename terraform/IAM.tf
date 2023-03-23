@@ -8,11 +8,19 @@ data "aws_iam_policy_document" "ingestion_lambda_code_bucket_access" {
       "${aws_s3_bucket.code_bucket.arn}/ingestion_lambda/*"
     ]
   }
+  statement {
+
+    actions = ["s3:PutObject", "s3:ListBucket"]
+
+    resources = [
+      "${aws_s3_bucket.ingestion_zone_bucket.arn}/*"
+    ]
+  }
 }
 
 #creates above policy in IAM
 resource "aws_iam_policy" "ingestion_lambda_code_bucket_access" {
-  name_prefix = "s3-access-policy-${var.ingestion_lambda_name}-"
+  name_prefix = "s3-access-policy-ingestion-lambda-"
   policy      = data.aws_iam_policy_document.ingestion_lambda_code_bucket_access.json
 }
 
@@ -29,7 +37,41 @@ data "aws_iam_policy_document" "ingestion_lambda_cw_document" {
 }
 
 # creates above policy in IAM
-resource "aws_iam_policy" "cw_policy" {
-  name_prefix = "cw-policy-${var.ingestion_lambda_name}-"
+resource "aws_iam_policy" "ingestion_lamba_cw_policy" {
+  name_prefix = "cw-policy-ingestion-lambda-"
   policy      = data.aws_iam_policy_document.ingestion_lambda_cw_document.json
+}
+
+# creates lambda role 
+resource "aws_iam_role" "ingestion_lambda_role" {
+  name_prefix        = "role-ingestion-lambda-"
+  assume_role_policy = <<EOF
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "sts:AssumeRole"
+                ],
+                "Principal": {
+                    "Service": [
+                        "lambda.amazonaws.com"
+                    ]
+                }
+            }
+        ]
+    }
+    EOF
+}
+
+# attach IAM policy to lambda role 
+resource "aws_iam_role_policy_attachment" "ingestion_lambda_s3_policy_attachment" {
+  role       = aws_iam_role.ingestion_lambda_role.name
+  policy_arn = aws_iam_policy.ingestion_lambda_code_bucket_access.arn
+}
+
+resource "aws_iam_role_policy_attachment" "ingestion_lambda_cw_policy_attachment" {
+  role       = aws_iam_role.ingestion_lambda_role.name
+  policy_arn = aws_iam_policy.ingestion_lamba_cw_policy.arn
 }
