@@ -1,5 +1,5 @@
 resource "aws_sns_topic" "error_alerts" {
-  name = "ingestion-lambda-error-alerts"
+  name = "extraction-lambda-error-alerts"
 }
 
 resource "aws_sns_topic_subscription" "lambda_alert_email" {

@@ -1,7 +1,7 @@
 resource "aws_lambda_function" "ingestion_lambda" {
-  function_name    = "ingestion_lambda"
+  function_name    = "extraction_lambda"
   role             = aws_iam_role.ingestion_lambda_role.arn
-  handler          = var.ingestion_lambda_handler
+  handler          = var.extraction_lambda_handler
   runtime          = "python3.9"
   source_code_hash = filebase64sha256(data.archive_file.ingestion_lambda_archive.output_path)
 

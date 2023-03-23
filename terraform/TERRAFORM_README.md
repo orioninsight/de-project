@@ -29,10 +29,10 @@
    terraform init
    ```
 
-8. Variables that can be changed are ingestion_lambda_handler
-   - ingestion_lambda_handler should match the defined handler function e.g. handler.example_handler
+8. Variables that can be changed are the lambda handler
+   - extraction_lambda_handler should match the defined handler function e.g. extract_db.extract_db_handler
 
-9. ingestion lambda files should reside in src/ingestion_lambda/
+9. extraction lambda files should reside in src/extraction_lambda/
 
 10. Run:
  ```bash
