@@ -31,7 +31,7 @@ def extractor():
     return Extractor()
 
 
-@pytest.fixture(scope='function', params=['address', 'design'])
+@pytest.fixture(scope='function', params=['address', 'design', 'counterparty', 'purchase_order', 'staff', 'sales_order', 'payment', 'transaction', 'payment_type', 'currency', 'department'])
 def downloaded_file(request):
     file_name = f"_test_{request.param}.csv"
     yield request.param, file_name

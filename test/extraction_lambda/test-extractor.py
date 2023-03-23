@@ -44,9 +44,9 @@ def test_extract_address_table(extractor):
                                                           "district", "city", "postal_code", "country", "phone", "created_at", "last_updated"}
 
 
-def test_extract_counter_party_table(extractor):
-    assert set(extractor.extract_counter_party()[0].keys()) == {"counterparty_id", "counterparty_legal_name",
-                                                                "legal_address_id", "commercial_contact", "delivery_contact", "created_at", "last_updated"}
+def test_extract_counterparty_table(extractor):
+    assert set(extractor.extract_counterparty()[0].keys()) == {"counterparty_id", "counterparty_legal_name",
+                                                               "legal_address_id", "commercial_contact", "delivery_contact", "created_at", "last_updated"}
 
 
 def test_extract_from_design_table(extractor):

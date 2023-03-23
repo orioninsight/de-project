@@ -50,7 +50,7 @@ def extract_db_handler(event, context):
 
         if ((tables_to_extract := event['extract_table'])):
             for table in tables_to_extract:
-                if table in ('address', 'design'):
+                if table in ['address', 'design', 'counterparty', 'purchase_order', 'staff', 'sales_order', 'payment', 'transaction', 'payment_type', 'currency', 'department']:
                     extract_fn = getattr(extractor, f'extract_{table}')
                     data = extract_fn()
                     file_name = f'{table}.csv'

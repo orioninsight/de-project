@@ -31,7 +31,7 @@ class Extractor:
         columns = [meta["name"]for meta in self.conn.columns]
         return self.create_dicts(columns, rows)
 
-    def extract_counter_party(self):
+    def extract_counterparty(self):
         """This method returns a list of dictionaries, where each dictionary represents a counter party record."""
 
         query_string = "SELECT counterparty_id,counterparty_legal_name,legal_address_id,commercial_contact,delivery_contact,created_at,last_updated FROM Counterparty"
