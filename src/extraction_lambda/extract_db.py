@@ -75,3 +75,5 @@ def extract_db_handler(event, context):
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
         raise RuntimeError(e)
+    finally:
+        extractor.close()
