@@ -1,11 +1,11 @@
 ---
 name: deploy-orion-insight
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - deploy
+on:[push]
+  # workflow_dispatch:
+  # push:
+  #   branches:
+  #     - deploy
 
 # these are the jobs
 jobs:
