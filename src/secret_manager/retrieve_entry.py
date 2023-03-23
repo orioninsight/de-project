@@ -1,11 +1,4 @@
 import boto3
-
-import botocore
-import pytest
-from moto import mock_secretsmanager
-import json
-import os
-
 from botocore.exceptions import ClientError
 
 
@@ -29,6 +22,7 @@ def retrieve_entry(secret_id):
             print("The request had invalid params:", e)
         elif e.response['Error']['Code'] == 'DecryptionFailure':
             print(
-                "The requested secret can't be decrypted using the provided KMS key:", e)
+                """The requested secret can't be decrypted using the
+                  provided KMS key:""", e)
         elif e.response['Error']['Code'] == 'InternalServiceError':
             print("An error occurred on service side:", e)
