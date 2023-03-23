@@ -37,7 +37,7 @@ endef
 ## Build the environment requirements
 requirements: create-environment
 	$(call execute_in_env, $(PIP) install -r ./requirements.txt)
-
+	$(call execute_in_env, $(PIP) install -r ./deployment/extraction_requirements.txt -t ./src/extraction_lambda/dependencies)
 ################################################################################################################
 # Set Up
 ## Install bandit
