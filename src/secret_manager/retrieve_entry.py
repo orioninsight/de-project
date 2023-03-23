@@ -1,9 +1,11 @@
 import boto3
+
 import botocore
 import pytest
 from moto import mock_secretsmanager
 import json
 import os
+
 from botocore.exceptions import ClientError
 
 
