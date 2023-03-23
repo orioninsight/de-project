@@ -38,6 +38,7 @@ endef
 requirements: create-environment
 	$(call execute_in_env, $(PIP) install -r ./requirements.txt)
 	$(call execute_in_env, $(PIP) install -r ./deployment/extraction_requirements.txt -t ./src/extraction_lambda/dependencies)
+
 ################################################################################################################
 # Set Up
 ## Install bandit
@@ -63,7 +64,7 @@ dev-setup: bandit safety flake coverage
 
 ## Run the security test (bandit + safety)
 security-test:
-	$(call execute_in_env, safety check -r ./requirements.txt)
+	$(call execute_in_env, safety check -r ./requirements.txt -r ./deployment/extraction_requirements.txt)
 	$(call execute_in_env, bandit -lll */*.py *c/*/*.py)
 
 ## Run the flake8 code check
@@ -72,7 +73,7 @@ run-flake:
 
 ## Run the unit tests
 unit-test:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -v)
+	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -v test/)
 
 ## Run the coverage check
 check-coverage:
