@@ -1,28 +1,28 @@
 import pandas as pd
+import logging
+
+logger = logging.getLogger('MyLogger')
+logger.setLevel(logging.INFO)
 
 
 class Saver:
     """A class for saving data to a file."""
-    def __init__(self):
-        pass
-    def save(self, data, key):
-        """Saves the data to a file with the key."""
 
     def __init__(self):
         pass
 
-    def save(self, data, key):
-        with open('key', 'wb') as file:
-            file.write(data)
-
-# pandas.DataFrame.from_dict: access a dictionary, keys will be used to label columns and the values will be added to column as data. 
-
-"""Converts dictionary to DataFrame"""
-converted_data = pd.DataFrame.from_dict(data, orient="columns", dtype=None) 
-
-#we need to add our data as parameter here , i  used columns as default but can be changed.  i used dtype as None which is default.
-# we can then use pandas to save to csv file
-
-converted_data.to_csv("transfered data")
-# or to json
-converted_data.to_json("transfered data")
+    def save_data(self, data, file_name):
+        """Saves the data to a file given file name."""
+        if type(data) is not list or data in (None, []):
+            logger.error(f"Argument 'data' ({data}) is invalid")
+            return False
+        if file_name in (None, ''):
+            logger.error("Argument 'file_name' ({file_name}) is invalid")
+            return False
+        try:
+            df = pd.DataFrame.from_dict(data, orient="columns", dtype=None)
+            df.to_csv(file_name, index=False)
+        except Exception as e:
+            logger.error(e)
+            return False
+        return True

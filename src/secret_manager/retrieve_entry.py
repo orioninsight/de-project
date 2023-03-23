@@ -30,3 +30,6 @@ def retrieve_entry(secret_id):
                 "The requested secret can't be decrypted using the provided KMS key:", e)
         elif e.response['Error']['Code'] == 'InternalServiceError':
             print("An error occurred on service side:", e)
+
+
+retrieve_entry('totesys_db')

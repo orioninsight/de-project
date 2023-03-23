@@ -34,7 +34,7 @@ def sm_secret(sm):
 
 @pytest.fixture(scope='function')
 def extractor():
-    return Extractor()
+    return Extractor(**json.loads(os.environ['OI_TOTESYS_SECRET_STRING']))
 
 
 def test_connect_to_the_Totesys_database(extractor):

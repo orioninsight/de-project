@@ -135,3 +135,5 @@ secrets.txt
 _env.py
 venv/*
 
+*.csv
+*.txt
