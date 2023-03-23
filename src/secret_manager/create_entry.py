@@ -6,7 +6,7 @@ logger.setLevel(logging.INFO)
 
 
 def create_entry(secret_id, host, port, user, password, database):
-    client = boto3.client('secretsmanager')
+    client = boto3.client('secretsmanager', region_name="us-east-1")
     try:
         client.create_secret(
             Name=secret_id,

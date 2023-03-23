@@ -20,6 +20,8 @@ def aws_credentials():
 @mock_secretsmanager
 # @pytest.fixture(scope="function")
 def test_create_entry_returns_success_message():
+    client = boto3.client('secretsmanager')
+
     secret_id = "testSId"
     host = 'testurl'
     port = '5432'
@@ -41,7 +43,7 @@ def test_create_entry_creates_new_secret():
     password = "123"
     database = 'testdb'
 
-    client = boto3.client('secretsmanager', region_name="us-east-1")
+    client = boto3.client('secretsmanager')
 
     # act
     create_entry(secret_id, host, port, user, password, database)
