@@ -11,10 +11,7 @@
 
 #   alarm_actions = [aws_sns_topic.error_alert.arn]
 
-#   dimensions = {
-#     FunctionName = var.ingestion_lambda_name
-#   }
-# }
+
 
 resource "aws_cloudwatch_log_metric_filter" "errors_filter" {
   name           = "error_filter"
@@ -40,4 +37,8 @@ resource "aws_cloudwatch_metric_alarm" "ingestion_lambda_errors_alarm" {
   alarm_description   = "This metric monitors error count."
 
   alarm_actions = [aws_sns_topic.error_alerts.arn]
+
+  dimensions = {
+  FunctionName = resource.aws_lambda_function.ingestion_lambda.name
+  }
 }
