@@ -72,7 +72,11 @@ run-flake:
 
 ## Run the unit tests
 unit-test:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} pytest -v)
+	@if [[ -n "${test_folder}" ]]; then \
+		$(call execute_in_env, PYTHONPATH=${PYTHONPATH}:${PYTHONPATH}/src/extraction_lambda pytest -v test/${test_folder}); \
+	else \
+		$(call execute_in_env, PYTHONPATH=${PYTHONPATH}:${PYTHONPATH}/src/extraction_lambda pytest -v test/); \
+	fi
 
 ## Run the coverage check
 check-coverage:
@@ -80,3 +84,5 @@ check-coverage:
 
 ## Run all checks
 run-checks: security-test run-flake unit-test check-coverage
+
+
