@@ -9,9 +9,11 @@ REGION = us-east-1
 PYTHON_INTERPRETER = python
 WD=$(shell pwd)
 PYTHONPATH=${WD}
+FULL_PYTHONPATH=${PYTHONPATH}:${PYTHONPATH}/src/extraction_lambda
 SHELL := /bin/bash
 PROFILE = default
 PIP:=pip
+
 
 ## Create python interpreter environment.
 create-environment:
@@ -72,15 +74,11 @@ run-flake:
 
 ## Run the unit tests
 unit-test:
-	@if [[ -n "${test_folder}" ]]; then \
-		$(call execute_in_env, PYTHONPATH=${PYTHONPATH}:${PYTHONPATH}/src/extraction_lambda pytest -v test/${test_folder}); \
-	else \
-		$(call execute_in_env, PYTHONPATH=${PYTHONPATH}:${PYTHONPATH}/src/extraction_lambda pytest -v test/); \
-	fi
+	$(call execute_in_env, PYTHONPATH=${FULL_PYTHONPATH} pytest -vrP test/${test_folder})
 
 ## Run the coverage check
 check-coverage:
-	$(call execute_in_env, PYTHONPATH=${PYTHONPATH} coverage run --omit 'venv/*' -m pytest && coverage report -m)
+	$(call execute_in_env, PYTHONPATH=${FULL_PYTHONPATH} coverage run --omit 'venv/*' -m pytest && coverage report -m)
 
 ## Run all checks
 run-checks: security-test run-flake unit-test check-coverage

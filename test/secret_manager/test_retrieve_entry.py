@@ -1,6 +1,5 @@
-from src.extraction_lambda.secret_manager.retrieve_entry import retrieve_entry
+from secret_manager.retrieve_entry import retrieve_entry
 import boto3
-import ast
 from moto import mock_secretsmanager
 import pytest
 import os
@@ -19,12 +18,11 @@ def aws_credentials():
 
 
 @mock_secretsmanager
-# @pytest.fixture(scope="function")
 def test_retrieve_secret(aws_credentials):
     test_client = boto3.client('secretsmanager')
     test_client.create_secret(
         Name="test1",
-        SecretString=f'{{"user": "user1", "password": "password1"}}'
+        SecretString='{"user": "user1", "password": "password1"}'
     )
     retrieve_entry("test1")
     expected = {"user": "user1", "password": "password1"}

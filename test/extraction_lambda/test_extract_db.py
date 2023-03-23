@@ -1,18 +1,20 @@
 from pathlib import Path
 from unittest.mock import patch
-from src.extraction_lambda.extract_db import (extract_db_handler)
-from src.extraction_lambda.extraction.extractor import Extractor
+from extract_db import (extract_db_handler)
+from extraction.extractor import Extractor
 import pytest
 import boto3
 import os
 from datetime import datetime
 
-S3_TEST_BUCKET_NAME = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
+S3_TEST_BUCKET_NAME = f'''test-extraction-bucket-{
+    int(datetime.now().timestamp())}'''
 
 
 @pytest.fixture(scope='function')
 def storer_info():
-    os.environ['OI_STORER_SECRET_STRING'] = f'{{"s3_bucket_name":"{S3_TEST_BUCKET_NAME}"}}'
+    os.environ['OI_STORER_SECRET_STRING'] = f'''{{"s3_bucket_name":
+                                        "{S3_TEST_BUCKET_NAME}"}}'''
 
 
 @pytest.fixture(scope="function")
@@ -31,7 +33,11 @@ def extractor():
     return Extractor()
 
 
-@pytest.fixture(scope='function', params=['address', 'design', 'counterparty', 'purchase_order', 'staff', 'sales_order', 'payment', 'transaction', 'payment_type', 'currency', 'department'])
+@pytest.fixture(scope='function', params=['address', 'design', 'counterparty',
+                                          'purchase_order', 'staff',
+                                          'sales_order', 'payment',
+                                          'transaction', 'payment_type',
+                                          'currency', 'department'])
 def downloaded_file(request):
     file_name = f"{request.param}.csv"
     yield request.param, file_name
@@ -40,28 +46,31 @@ def downloaded_file(request):
         file.unlink()
 
 
-@patch('src.extraction_lambda.extract_db.logger.error')
-@patch('src.extraction_lambda.extract_db.retrieve_entry', side_effect=Exception('ERROR!'))
-def test_raises_runtime_exception_on_error(mock_retrieve_entry, mock_logger_error):
-    with pytest.raises(Exception) as err_info:
+@patch('extract_db.logger.error')
+@patch('extract_db.retrieve_entry',
+       side_effect=Exception('ERROR!'))
+def test_raises_runtime_exception_on_error(mock_retrieve_entry,
+                                           mock_logger_error):
+    with pytest.raises(Exception):
         extract_db_handler({'extract_table': ['UNSUPPORTED_TABLE']}, None)
     mock_logger_error.assert_called_once_with(
         'An error occurred extracting the data: ERROR!')
 
 
 def test_raises_unsupported_table_exception(storer_info):
-    with pytest.raises(Exception, match='Unsupported table') as err_info:
+    with pytest.raises(Exception, match='Unsupported table'):
         extract_db_handler({'extract_table': ['UNSUPPORTED_TABLE']}, None)
 
 
 def test_raises_exception_given_empty_or_invalid_lambda_payload():
-    with pytest.raises(Exception, match='payload requires list in') as err_info:
+    with pytest.raises(Exception, match='payload requires list in'):
         extract_db_handler(None, None)
-    with pytest.raises(Exception, match='payload requires list in') as err_info:
+    with pytest.raises(Exception, match='payload requires list in'):
         extract_db_handler({'INVALID': 'PAYLOAD'}, None)
 
 
-def test_extracts_from_db_then_saves_file_and_stores_file_in_s3(s3, storer_info, downloaded_file):
+def test_extracts_db_table_and_stores_file_in_s3(s3, storer_info,
+                                                 downloaded_file):
     table_name, file_name = downloaded_file
     extract_db_handler({'extract_table': [table_name]}, None)
     s3.download_file(S3_TEST_BUCKET_NAME,

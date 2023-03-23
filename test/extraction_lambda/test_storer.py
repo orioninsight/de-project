@@ -3,9 +3,9 @@ import pytest
 from moto import mock_s3
 import os
 import boto3
-from src.extraction_lambda.extraction.extractor import Extractor
-from src.extraction_lambda.extraction.saver import Saver
-from src.extraction_lambda.extraction.storer import Storer
+from extraction.extractor import Extractor
+from extraction.saver import Saver
+from extraction.storer import Storer
 
 S3_TEST_BUCKET_NAME = "test-bucket"
 
@@ -69,8 +69,8 @@ def test_stores_data_into_s3_bucket(s3, storer, test_file, downloaded_file):
     s3.download_file(S3_TEST_BUCKET_NAME,
                      obj_key, downloaded_file)
     with open(downloaded_file, 'r', encoding='utf-8') as f:
-        assert f.readline().split(',') == ['THIS',
-                                           'IS', 'A', 'TEST', 'FILE', 'FOR', 'S3']
+        assert f.readline().split(',') == [
+            'THIS', 'IS', 'A', 'TEST', 'FILE', 'FOR', 'S3']
 
 
 def test_returns_false_on_bucket_name_error(storer, test_file):

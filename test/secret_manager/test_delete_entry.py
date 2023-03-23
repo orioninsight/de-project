@@ -1,7 +1,6 @@
-from src.extraction_lambda.secret_manager.delete_entry import delete_entry
-from src.extraction_lambda.secret_manager.list_entries import list_secrets
+from secret_manager.delete_entry import delete_entry
+from secret_manager.list_entries import list_secrets
 import boto3
-import ast
 from moto import mock_secretsmanager
 import pytest
 import os

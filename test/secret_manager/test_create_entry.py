@@ -4,7 +4,7 @@ import pytest
 from moto import mock_secretsmanager
 import json
 import os
-from src.extraction_lambda.secret_manager.create_entry import create_entry
+from secret_manager.create_entry import create_entry
 
 
 @pytest.fixture(scope="function")
@@ -68,8 +68,6 @@ def test_create_entry_raises_exception():
     user = "Joe"
     password = "123"
     database = 'testdb'
-    client = boto3.client('secretsmanager')
-
     # act
     with pytest.raises(botocore.exceptions.ParamValidationError):
         create_entry(secret_id, host, port, user, password, database)
