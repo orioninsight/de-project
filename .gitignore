@@ -135,6 +135,4 @@ dmypy.json
 # installed lambda dependencies
 /src/extraction_lambda/dependencies/
 
-
-
 secrets.txt
