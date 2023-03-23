@@ -68,7 +68,7 @@ def test_create_entry_raises_exception():
     user = "Joe"
     password = "123"
     database = 'testdb'
-    client = boto3.client('secretsmanager')
+    # client = boto3.client('secretsmanager') client not used
 
     # act
     with pytest.raises(botocore.exceptions.ParamValidationError):
