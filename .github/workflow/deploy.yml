@@ -7,6 +7,7 @@ on:
     branches:
       - deploy
 
+# these are the jobs
 jobs:
   run-tests:
     name: run-tests
