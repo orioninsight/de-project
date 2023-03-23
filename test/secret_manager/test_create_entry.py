@@ -4,7 +4,7 @@ import pytest
 from moto import mock_secretsmanager
 import json
 import os
-from src.secret_manager.create_entry import create_entry
+from src.extraction_lambda.secret_manager.create_entry import create_entry
 
 
 @pytest.fixture(scope="function")

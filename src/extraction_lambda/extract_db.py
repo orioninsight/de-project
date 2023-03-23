@@ -1,11 +1,10 @@
-
 import os
 import logging
 import json
-from src.extraction_lambda.extraction.extractor import Extractor
-from src.extraction_lambda.extraction.saver import Saver
-from src.extraction_lambda.extraction.storer import Storer
-from src.secret_manager.retrieve_entry import retrieve_entry
+from extraction.extractor import Extractor
+from extraction.saver import Saver
+from extraction.storer import Storer
+from secret_manager.retrieve_entry import retrieve_entry
 
 """ The logging level is set to INFO, which means that only messages of 
     level INFO will be logged. 

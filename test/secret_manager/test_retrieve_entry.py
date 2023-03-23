@@ -1,4 +1,4 @@
-from src.secret_manager.retrieve_entry import retrieve_entry
+from src.extraction_lambda.secret_manager.retrieve_entry import retrieve_entry
 import boto3
 import ast
 from moto import mock_secretsmanager
