@@ -1,12 +1,11 @@
 
-from test_mod.test_mod import test
 import os
 import logging
 import json
+from src.extraction_lambda.extraction.extractor import Extractor
+from src.extraction_lambda.extraction.saver import Saver
+from src.extraction_lambda.extraction.storer import Storer
 from src.secret_manager.retrieve_entry import retrieve_entry
-from src.extraction.extractor import Extractor
-from src.extraction.saver import Saver
-from src.extraction.storer import Storer
 
 """ The logging level is set to INFO, which means that only messages of 
     level INFO will be logged. 
@@ -68,6 +67,3 @@ def extract_db_handler(event, context):
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
         raise RuntimeError(e)
-
-
-test()

@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest.mock import patch
-from src.extraction.extract_db import (extract_db_handler)
-from src.extraction.extractor import Extractor
+from src.extraction_lambda.extract_db import (extract_db_handler)
+from src.extraction_lambda.extraction.extractor import Extractor
 import pytest
 import boto3
 import os
@@ -40,8 +40,8 @@ def downloaded_file(request):
         file.unlink()
 
 
-@patch('src.extraction.extract_db.logger.error')
-@patch('src.extraction.extract_db.retrieve_entry', side_effect=Exception('ERROR!'))
+@patch('src.extraction_lambda.extract_db.logger.error')
+@patch('src.extraction_lambda.extract_db.retrieve_entry', side_effect=Exception('ERROR!'))
 def test_raises_runtime_exception_on_error(mock_retrieve_entry, mock_logger_error):
     with pytest.raises(Exception) as err_info:
         extract_db_handler({'extract_table': ['UNSUPPORTED_TABLE']}, None)

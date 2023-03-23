@@ -1,4 +1,4 @@
-from src.extraction.extractor import Extractor
+from src.extraction_lambda.extraction.extractor import Extractor
 import pytest
 import os
 import boto3

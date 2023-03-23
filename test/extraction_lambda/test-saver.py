@@ -1,8 +1,8 @@
 from pathlib import Path
 from unittest.mock import patch
 import pytest
-from src.extraction.saver import Saver
-from src.extraction.extractor import Extractor
+from src.extraction_lambda.extraction.saver import Saver
+from src.extraction_lambda.extraction.extractor import Extractor
 import json
 import os
 
@@ -26,7 +26,7 @@ def test_file():
         file.unlink()
 
 
-@patch('src.extraction.extractor.Extractor.extract_address')
+@patch('src.extraction_lambda.extraction.extractor.Extractor.extract_address')
 def test_save_data_into_file(mock_extract_address, extractor, saver, test_file):
     # Arrange
     mock_extract_address.return_value = [{'address_id': '1', 'address_line_1': 'abc', 'address_line_2': 'efg',

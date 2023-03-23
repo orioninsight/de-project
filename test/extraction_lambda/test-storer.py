@@ -3,9 +3,9 @@ import pytest
 from moto import mock_s3
 import os
 import boto3
-from src.extraction.extractor import Extractor
-from src.extraction.saver import Saver
-from src.extraction.storer import Storer
+from src.extraction_lambda.extraction.extractor import Extractor
+from src.extraction_lambda.extraction.saver import Saver
+from src.extraction_lambda.extraction.storer import Storer
 
 S3_TEST_BUCKET_NAME = "test-bucket"
 
