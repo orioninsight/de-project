@@ -4,6 +4,7 @@ import boto3
 from moto import mock_secretsmanager
 import pytest
 import os
+import botocore
 
 
 @pytest.fixture(scope="function")
@@ -36,3 +37,12 @@ def test_delete_entry(aws_credentials):
 
     expected = list_secrets()
     assert expected == ["test1", "test3"]
+
+
+@mock_secretsmanager
+def test_delete_entry_raises_exception():
+    secret_id = ""
+
+    # act
+    with pytest.raises(botocore.exceptions.ParamValidationError):
+        delete_entry(secret_id)
