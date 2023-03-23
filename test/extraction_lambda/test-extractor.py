@@ -1,33 +1,7 @@
 from src.extraction_lambda.extraction.extractor import Extractor
 import pytest
 import os
-import boto3
-from moto import mock_secretsmanager
 import json
-
-
-@pytest.fixture(scope="function")
-def aws_credentials():
-    """Mocked AWS Credentials for moto."""
-    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-    os.environ["AWS_SECURITY_TOKEN"] = "testing"
-    os.environ["AWS_SESSION_TOKEN"] = "testing"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
-
-@pytest.fixture(scope="function")
-def sm(aws_credentials):
-    with mock_secretsmanager():
-        yield boto3.client("secretsmanager")
-
-
-@pytest.fixture(scope="function")
-def sm_secret(sm):
-    db_creds = json.dumps({"user": "abcd", "password": "1234",
-                          "port": "1000", "database": "books", "host": "localhost"})
-    sm.create_secret(Name="db007", SecretString=db_creds)
-    return sm
 
 
 @pytest.fixture(scope='function')
