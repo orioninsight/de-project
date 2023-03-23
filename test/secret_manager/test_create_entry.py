@@ -42,7 +42,7 @@ def test_create_entry_creates_new_secret():
     password = "123"
     database = 'testdb'
 
-    client = boto3.client('secretsmanager')
+    client = boto3.client('secretsmanager', region_name="us-east-1")
 
     # act
     create_entry(secret_id, host, port, user, password, database)
