@@ -1,5 +1,4 @@
 import boto3
-from botocore import exceptions
 import logging
 
 logger = logging.getLogger('MyLogger')
