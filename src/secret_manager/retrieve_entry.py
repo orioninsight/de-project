@@ -1,9 +1,11 @@
 import boto3
-# import botocore
-# import pytest
+
+import botocore
+import pytest
 from moto import mock_secretsmanager
-# import json
-# import os
+import json
+import os
+
 from botocore.exceptions import ClientError
 
 
@@ -13,10 +15,10 @@ def retrieve_entry(secret_id):
         SecretId=secret_id)
     try:
         secret = response.get('SecretString')
-        with open("secrets.txt", "w") as f:
-            # Writing data to a file
-            f.write(secret)
-        print("Secrets stored in local file secrets.txt")
+        # with open("secrets.txt", "w") as f:
+        #     # Writing data to a file
+        #     f.write(secret)
+        # print("Secrets stored in local file secrets.txt")
         return secret
     except ClientError as e:
         if e.response['Error']['Code'] == 'ResourceNotFoundException':

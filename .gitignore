@@ -130,6 +130,7 @@ dmypy.json
 
 # terraform
 .terraform*
+*.zip
 
 secrets.txt
 _env.py
