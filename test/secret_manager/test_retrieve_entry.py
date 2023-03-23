@@ -5,6 +5,7 @@ from moto import mock_secretsmanager
 import pytest
 import os
 import json
+import botocore
 
 
 @pytest.fixture(scope="function")
@@ -27,9 +28,18 @@ def test_retrieve_secret(aws_credentials):
     )
     retrieve_entry("test1")
     expected = {"user": "user1", "password": "password1"}
-    f = open("secrets.txt", "r")
-    result = f.read()
-    read = ast.literal_eval(result)
+    # f = open("secrets.txt", "r")
+    # result = f.read()
+    read = json.loads(retrieve_entry("test1"))
     assert read["user"] == expected["user"]
     assert read["password"] == expected["password"]
-    assert expected["user"] == json.loads(retrieve_entry("test1"))["user"]
+    assert expected["user"] == read["user"]
+
+
+@mock_secretsmanager
+def test_retrieve_entry_raises_exception():
+    secret_id = ""
+
+    # act
+    with pytest.raises(botocore.exceptions.ParamValidationError):
+        retrieve_entry(secret_id)
