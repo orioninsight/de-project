@@ -12,6 +12,9 @@ resource "aws_lambda_function" "ingestion_lambda" {
   depends_on = [
     aws_s3_object.ingestion_lambda_code
   ]
+   environment {
+    variables = {
+      OI_STORER_SECRET_STRING = jsonencode({"s3_bucket_name":"${aws_s3_bucket.ingestion_zone_bucket.id}"})
+    }
 }
-
-
+}
