@@ -15,3 +15,9 @@ variable "ingestion_lambda_handler" {
   type    = string
   default = "handler.example_handler"
 }
+
+# email for ingestion zone lambda alerting
+variable "email" {
+  type    = string
+  default = "orioninsight23@gmail.com"
+}

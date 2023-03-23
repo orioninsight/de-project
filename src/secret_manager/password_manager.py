@@ -24,14 +24,13 @@ while True:
         elif action == "r":
             secret_id = input("Secret identifier:\n")
             entry = retrieve_entry(secret_id)
+
             respone = "Secrets stored in local file secrets.txt"
         elif action == "d":
             secret_id = input("Specify the secret you would like to delete:")
             delete_entry(secret_id)
-            respone = 'deleted'
         elif action == "l":
             response = list_secrets()
-            
         elif action == "x":
             break
         else:
