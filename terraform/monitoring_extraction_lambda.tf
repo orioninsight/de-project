@@ -37,8 +37,4 @@ resource "aws_cloudwatch_metric_alarm" "ingestion_lambda_errors_alarm" {
   alarm_description   = "This metric monitors error count."
 
   alarm_actions = [aws_sns_topic.error_alerts.arn]
-
-  dimensions = {
-  FunctionName = resource.aws_lambda_function.ingestion_lambda.name
-  }
 }
