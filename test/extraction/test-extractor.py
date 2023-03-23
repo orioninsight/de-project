@@ -1,5 +1,3 @@
-from src.extraction.extract_db import (
-    get_db_credentials)
 from src.extraction.extractor import Extractor
 import pytest
 import os
@@ -39,13 +37,6 @@ def extractor():
 
 def test_connect_to_the_Totesys_database(extractor):
     assert len(extractor.conn.run("SELECT * FROM design")) > 0
-
-
-def test_returns_db_credentials_from_secretsmanager(sm_secret):
-    db_creds = get_db_credentials("db007")
-    assert db_creds["user"] == "abcd"
-    assert db_creds["password"] == "1234"
-    assert db_creds["database"] == "books"
 
 
 def test_extract_address_table(extractor):

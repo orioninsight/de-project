@@ -2,25 +2,12 @@ from pathlib import Path
 from unittest.mock import patch
 from src.extraction.extract_db import (extract_db_handler)
 from src.extraction.extractor import Extractor
-from src.extraction.saver import Saver
-from src.extraction.storer import Storer
 import pytest
-from moto import mock_s3
 import boto3
 import os
 from datetime import datetime
 
 S3_TEST_BUCKET_NAME = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
-
-
-@pytest.fixture(scope="function")
-def aws_credentials():
-    """Mocked AWS Credentials for moto."""
-    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-    os.environ["AWS_SECURITY_TOKEN"] = "testing"
-    os.environ["AWS_SESSION_TOKEN"] = "testing"
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
 
 @pytest.fixture(scope='function')

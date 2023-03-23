@@ -1,9 +1,7 @@
 
+from test_mod.test_mod import test
 import os
-import pg8000.native
 import logging
-import boto3
-from botocore.exceptions import ClientError
 import json
 from src.secret_manager.retrieve_entry import retrieve_entry
 from src.extraction.extractor import Extractor
@@ -72,15 +70,4 @@ def extract_db_handler(event, context):
         raise RuntimeError(e)
 
 
-def get_db_credentials(secret_id):
-    """
-        Retrieves the credentials for a database from AWS Secrets Manager.
-        take string as argument and return a dictionary containing the database credentials. 
-    """
-    sm_secret = boto3.client("secretsmanager")
-    secret_string = sm_secret.get_secret_value(
-        SecretId=secret_id)["SecretString"]
-    return json.loads(secret_string)
-
-
-# extract_db_handler(None, None)
+test()

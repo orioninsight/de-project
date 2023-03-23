@@ -1,5 +1,4 @@
 import pg8000.native
-import src.extraction._env as _env
 
 
 class Extractor:
