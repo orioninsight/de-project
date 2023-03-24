@@ -136,3 +136,7 @@ dmypy.json
 /src/extraction_lambda/dependencies/
 
 secrets.txt
+_env.py
+venv/*
+
+*.csv

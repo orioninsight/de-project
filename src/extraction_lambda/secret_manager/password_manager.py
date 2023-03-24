@@ -32,6 +32,7 @@ while True:
             delete_entry(secret_id)
         elif action == "l":
             response = list_secrets()
+
         elif action == "x":
             break
         else:
