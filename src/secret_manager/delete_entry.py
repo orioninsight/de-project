@@ -10,5 +10,6 @@ def delete_entry(secret_id):
             ForceDeleteWithoutRecovery=True
         )
         print("Deleted")
-    except client.exceptions.ResourceNotFoundException:
+    except Exception as e:
         print("Secret not found")
+        raise e
