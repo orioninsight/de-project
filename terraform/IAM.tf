@@ -36,14 +36,14 @@ data "aws_iam_policy_document" "ingestion_lambda_cw_document" {
   }
 }
 
-#creates policy locally to allow ingestion_lambda lambda to access specific secret in secrets manager (ARN NEEDS UPDATING WITH NEW SANDBOX)
+#creates policy locally to allow ingestion_lambda lambda to access specific secret in secrets manager 
 data "aws_iam_policy_document" "ingestion_lambda_secretsmanager_document" {
   statement {
 
     actions = ["secretsmanager:GetSecretValue"]
 
     resources = [
-      "arn:aws:secretsmanager:us-east-1:271939554930:secret:totesys_db-BWq2Zv"
+      "${data.aws_secretsmanager_secret.database_secret.arn}"
     ]
   }
 }
