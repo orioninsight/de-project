@@ -26,7 +26,7 @@ resource "aws_cloudwatch_log_metric_filter" "errors_filter" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "ingestion_lambda_errors_alarm" {
-  alarm_name = "ingestion-lambda-error-alarm"
+  alarm_name = "extraction-lambda-error-alarm"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = "1"
   period = "60"

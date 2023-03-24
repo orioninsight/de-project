@@ -11,9 +11,9 @@ variable "ingestion_zone_bucket_prefix" {
 }
 
 #lambda handler for ingestion zone lambda
-variable "ingestion_lambda_handler" {
+variable "extraction_lambda_handler" {
   type    = string
-  default = "handler.example_handler"
+  default = "extract_db.extract_db_handler"
 }
 
 # email for ingestion zone lambda alerting
