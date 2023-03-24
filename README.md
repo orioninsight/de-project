@@ -6,7 +6,7 @@
     make dev-setup
 ```
 
-Add a secret with ID **totesys** to AWS Secrets Manager in the following format, **replacing values**:
+Add a secret with ID **totesys_db** to AWS Secrets Manager in the following format, **replacing values**:
 ```
     '{"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}'
 ```
