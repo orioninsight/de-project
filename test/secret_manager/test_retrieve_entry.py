@@ -1,4 +1,4 @@
-from src.secret_manager.retrieve_entry import retrieve_entry
+from secret_manager.retrieve_entry import retrieve_entry
 import boto3
 from moto import mock_secretsmanager
 import pytest
@@ -18,7 +18,6 @@ def aws_credentials():
 
 
 @mock_secretsmanager
-# @pytest.fixture(scope="function")
 def test_retrieve_secret(aws_credentials):
     test_client = boto3.client('secretsmanager')
     test_client.create_secret(

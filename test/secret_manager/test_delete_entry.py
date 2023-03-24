@@ -1,5 +1,5 @@
-from src.secret_manager.delete_entry import delete_entry
-from src.secret_manager.list_entries import list_secrets
+from secret_manager.delete_entry import delete_entry
+from secret_manager.list_entries import list_secrets
 import boto3
 from moto import mock_secretsmanager
 import pytest
