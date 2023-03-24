@@ -45,12 +45,7 @@ def test_create_entry_creates_new_secret():
 
     # act
     create_entry(secret_id, host, port, user, password, database)
-    response = ""
-    try:
-        response = client.get_secret_value(SecretId=secret_id)
-
-    except Exception as e:
-        assert e == ""
+    response = client.get_secret_value(SecretId=secret_id)
 
     secret = json.loads(response['SecretString'])
     # assert
