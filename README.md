@@ -54,7 +54,7 @@ If backend bucket for terraform does not already exist follow these steps:
       }
     }
     ```
-4. extraction_lambda_handler should match the defined handler function e.g. extract_db.extract_db_handler
+4. variable extraction_lambda_handler in vars.tf should match the defined handler function e.g. extract_db.extract_db_handler
 
 5.  Run in terraform folder:
  ```bash
