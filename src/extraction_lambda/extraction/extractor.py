@@ -1,3 +1,11 @@
+import sys
+import os
+
+# Add the dependencies directory to the Python import path
+dependencies_path = os.path.join(os.path.dirname(__file__), '..', 'dependencies')
+sys.path.insert(0, dependencies_path)
+
+# Now you can import the pg8000 library
 import pg8000.native
 
 
