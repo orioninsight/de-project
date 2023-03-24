@@ -34,7 +34,7 @@ If only testing locally (not deploying via terraform), export variable **OI_TOTE
 
 If backend bucket for terraform does not already exist follow these steps:
    
-- cd into terraform folder and give executable permissions to backend.sh
+-  give executable permissions to backend.sh
    ```bash
    chmod u+x backend.sh
    ```
