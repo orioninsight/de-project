@@ -8,3 +8,6 @@ data "archive_file" "ingestion_lambda_archive" {
   output_path = "${path.module}/../archives/extraction_lambda/app.zip"
 }
 
+data "aws_secretsmanager_secret" "database_secret" {
+  name = "totesys_db"
+}
