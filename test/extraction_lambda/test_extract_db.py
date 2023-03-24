@@ -62,11 +62,9 @@ def test_raises_unsupported_table_exception(storer_info):
         extract_db_handler({'extract_table': ['UNSUPPORTED_TABLE']}, None)
 
 
-def test_raises_exception_given_empty_or_invalid_lambda_payload():
+def test_raises_exception_given_lambda_payload():
     with pytest.raises(Exception, match='payload requires list in'):
-        extract_db_handler(None, None)
-    with pytest.raises(Exception, match='payload requires list in'):
-        extract_db_handler({'INVALID': 'PAYLOAD'}, None)
+        extract_db_handler({'extract_table': 123}, None)
 
 
 def test_extracts_db_table_and_stores_file_in_s3(s3, storer_info,
