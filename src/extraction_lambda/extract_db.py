@@ -37,8 +37,18 @@ def extract_db_handler(event, context):
     """  # noqa: E501
 
     try:
+        valid_tables = ['address', 'design', 'counterparty',
+                        'purchase_order', 'staff', 'sales_order',
+                        'payment', 'transaction', 'payment_type',
+                        'currency', 'department']
+        tables_to_extract = []
         if event is None or 'extract_table' not in event:
-            raise Exception("Event payload requires list in 'extract_table'")
+            tables_to_extract = valid_tables
+        else:
+            tables_to_extract = event['extract_table']
+            if type(tables_to_extract) is not list:
+                raise \
+                    Exception("Event payload requires list in 'extract_table'")
         db_secret_string = os.environ['OI_TOTESYS_SECRET_STRING']  \
             if 'OI_TOTESYS_SECRET_STRING' in \
             os.environ else retrieve_entry('totesys_db')
@@ -50,27 +60,22 @@ def extract_db_handler(event, context):
             os.environ else retrieve_entry('storer_info')
         storer_secret_json = json.loads(storer_secret_string)
         storer = Storer(**storer_secret_json)
-
-        if ((tables_to_extract := event['extract_table'])):
-            for table in tables_to_extract:
-                if table in ['address', 'design', 'counterparty',
-                             'purchase_order', 'staff', 'sales_order',
-                             'payment', 'transaction', 'payment_type',
-                             'currency', 'department']:
-                    extract_fn = getattr(extractor, f'extract_{table}')
-                    data = extract_fn()
-                    file_name = f'{table}.csv'
-                    if not saver.save_data(data, file_name):
-                        raise Exception(f"Could not save table '{table}' data")
-                    logger.info(
-                        f'Data from table {table} saved to file {file_name}')
-                    if not storer.store_file(file_name, table):
-                        raise Exception(
-                            f"""Could not store data file
-                                '{file_name}' of table '{table}'""")
-                    logger.info(f'Data from table {table} stored on S3')
-                else:
-                    raise Exception(f"Unsupported table '{table}' to extract")
+        for table in tables_to_extract:
+            if table in valid_tables:
+                extract_fn = getattr(extractor, f'extract_{table}')
+                data = extract_fn()
+                file_name = f'{table}.csv'
+                if not saver.save_data(data, file_name):
+                    raise Exception(f"Could not save table '{table}' data")
+                logger.info(
+                    f'Data from table {table} saved to file {file_name}')
+                if not storer.store_file(file_name, table):
+                    raise Exception(
+                        f"""Could not store data file
+                            '{file_name}' of table '{table}'""")
+                logger.info(f'Data from table {table} stored on S3')
+            else:
+                raise Exception(f"Unsupported table '{table}' to extract")
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
         raise RuntimeError(e)
