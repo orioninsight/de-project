@@ -10,7 +10,9 @@ pip install pytest;
 pip install 'moto[s3, secretsmanager, lambda, cloudwatch, eventsbridge]';
 pip install pandas;
 ```
-Set environment variable OI_TOTESYS_SECRET_STRING to {"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}, replaing values as necessary
+Set environment variable OI_TOTESYS_SECRET_STRING to '{"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}', replacing values as necessary. 
+
+***DON'T FORGET THE SINGLE QUOTES!***
 
 
 ## Run tests
