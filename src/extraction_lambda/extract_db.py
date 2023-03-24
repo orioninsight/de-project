@@ -71,9 +71,9 @@ def extract_db_handler(event, context):
                     logger.info(f'Data from table {table} stored on S3')
                 else:
                     raise Exception(f"Unsupported table '{table}' to extract")
-
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
         raise RuntimeError(e)
     finally:
-        extractor.close()
+        if 'extractor' in locals():
+            extractor.close()

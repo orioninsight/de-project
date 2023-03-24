@@ -3,7 +3,8 @@ from src.secret_manager.retrieve_entry import retrieve_entry
 from src.secret_manager.delete_entry import delete_entry
 from src.secret_manager.list_entries import list_secrets
 
-prompt = "Please specify [e]ntry, [r]etrieval, [d]eletion, [l]isting or e[x]it: \n"
+prompt = """Please specify [e]ntry, [r]etrieval, [d]eletion, [l]isting,
+ or e[x]it: \n"""
 
 while True:
     action = input(prompt)
