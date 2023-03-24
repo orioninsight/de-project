@@ -86,3 +86,8 @@ def test_extract_from_purchase_order_table(extractor):
         "counterparty_id", "item_code", "item_quantity", "item_unit_price",
         "currency_id", "agreed_delivery_date", "agreed_payment_date",
         "agreed_delivery_location_id"}
+
+def test_extract_db_stats(extractor):
+    assert set(extractor.extract_db_stats()[0].keys()) == {
+        "tup_inserted","tup_updated","tup_deleted"
+}

@@ -145,3 +145,13 @@ class Extractor:
         rows = self.conn.run(query_string)
         columns = [meta["name"]for meta in self.conn.columns]
         return self.create_dicts(columns, rows)
+    
+    def extract_db_stats(self):
+        """This method returns a list of dictionaries, \
+        where each dictionary represents the state of db."""
+
+        query_string = """SELECT tup_inserted, tup_updated, tup_deleted FROM pg_stat_database WHERE datname='totesys' ORDER BY datid DESC;"""
+        rows = self.conn.run(query_string)
+        columns = [meta["name"]for meta in self.conn.columns]
+        return self.create_dicts(columns, rows) 
+            
