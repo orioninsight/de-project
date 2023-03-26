@@ -39,10 +39,28 @@ endef
 ## Build the environment requirements
 requirements: create-environment
 	$(call execute_in_env, $(PIP) install -r ./requirements.txt)
-	$(call execute_in_env, $(PIP) install -r ./deployment/extraction_requirements.txt -t ./src/extraction_lambda/dependencies)
 
 ################################################################################################################
 # Set Up
+
+##Install requirments for lambda deployment
+lambda-deployment-packages:
+	@if test -d "./archives/tmp"; then \
+		echo "Error: ./archives/tmp directory already exists."; \
+		exit 1; \
+	fi
+
+	@if ! which zip > /dev/null; then \
+    echo "Error: zip is not installed. Please install zip and try again."; \
+    exit 1; \
+	fi
+
+	mkdir ./archives/tmp -p
+	$(call execute_in_env, $(PIP) install -r ./deployment/extraction_requirements.txt -t ./archives/tmp/)
+	cp -r ./src/extraction_lambda/* ./archives/tmp/
+	cd ./archives/tmp && zip -r ../extraction_lambda.zip ./*
+	rm -R ./archives/tmp
+
 ## Install bandit
 bandit:
 	$(call execute_in_env, $(PIP) install bandit)
