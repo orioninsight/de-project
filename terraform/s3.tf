@@ -7,12 +7,12 @@ resource "aws_s3_bucket" "ingestion_zone_bucket" {
 }
 
 resource "aws_s3_object" "ingestion_lambda_code" {
-  key    = "extraction_lambda/app.zip"
-  source = data.archive_file.ingestion_lambda_archive.output_path
-  bucket = aws_s3_bucket.code_bucket.bucket
+  key         = "extraction_lambda/extraction_lambda.zip"
+  source      = data.local_file.ingestion_lambda_archive.filename
+  bucket      = aws_s3_bucket.code_bucket.bucket
+  source_hash = filebase64sha256(data.local_file.ingestion_lambda_archive.filename)
   depends_on = [
-    data.archive_file.ingestion_lambda_archive
+    data.local_file.ingestion_lambda_archive
   ]
-  etag = filemd5(data.archive_file.ingestion_lambda_archive.output_path)
 }
 
