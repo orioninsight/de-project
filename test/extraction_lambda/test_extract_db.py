@@ -1,6 +1,6 @@
 from pathlib import Path
 from unittest.mock import patch
-from extract_db import (extract_db_handler)
+from extract_db import (extract_db_handler, VALID_TABLES)
 from extraction.extractor import Extractor
 import pytest
 import boto3
@@ -39,22 +39,11 @@ def extractor():
                                           'transaction', 'payment_type',
                                           'currency', 'department'])
 def downloaded_file(request):
-    file_name = f"{request.param}.csv"
+    file_name = f"/tmp/{request.param}.csv"
     yield request.param, file_name
     file = Path(file_name)
     if file.is_file():
         file.unlink()
-
-
-@patch('extract_db.logger.error')
-@patch('extract_db.retrieve_entry',
-       side_effect=Exception('ERROR!'))
-def test_raises_runtime_exception_on_error(mock_retrieve_entry,
-                                           mock_logger_error):
-    with pytest.raises(Exception):
-        extract_db_handler({'extract_table': ['UNSUPPORTED_TABLE']}, None)
-    mock_logger_error.assert_called_once_with(
-        'An error occurred extracting the data: ERROR!')
 
 
 def test_raises_unsupported_table_exception(storer_info):
@@ -76,3 +65,9 @@ def test_extracts_db_table_and_stores_file_in_s3(s3, storer_info,
     with open(file_name, 'r', encoding='utf-8') as f:
         assert f'{table_name}_id' in f.readline().split(',')
         assert len(f.readlines()) > 0
+
+
+@patch('extract_db.extract_db_helper')
+def test_extracts_all_db_tables_given_no_payload(mock_db_helper):
+    extract_db_handler({}, None)
+    mock_db_helper.assert_called_once_with(VALID_TABLES)

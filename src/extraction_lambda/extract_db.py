@@ -12,8 +12,29 @@ from secret_manager.retrieve_entry import retrieve_entry
 logger = logging.getLogger('MyLogger')
 logger.setLevel(logging.INFO)
 
+VALID_TABLES = ['address', 'design', 'counterparty',
+                'purchase_order', 'staff', 'sales_order',
+                'payment', 'transaction', 'payment_type',
+                'currency', 'department']
+
 
 def extract_db_handler(event, context):
+    try:
+        tables_to_extract = []
+        if event is None or event == {} or 'extract_table' not in event:
+            tables_to_extract = VALID_TABLES
+        else:
+            tables_to_extract = event['extract_table']
+        if type(tables_to_extract) is not list:
+            raise (Exception("Event payload requires list "
+                             "in 'extract_table'"))
+        extract_db_helper(tables_to_extract)
+    except Exception as e:
+        logger.error(f'An error occurred extracting the data: {e}')
+        raise RuntimeError(e)
+
+
+def extract_db_helper(tables_to_extract):
     """ AWS Lambda to extract tables from Totesys DB
 
         Relies on environmental variable 'OI_TOTESYS_SECRET_STRING'
@@ -37,34 +58,22 @@ def extract_db_handler(event, context):
     """  # noqa: E501
 
     try:
-        valid_tables = ['address', 'design', 'counterparty',
-                        'purchase_order', 'staff', 'sales_order',
-                        'payment', 'transaction', 'payment_type',
-                        'currency', 'department']
-        tables_to_extract = []
-        if event is None or 'extract_table' not in event:
-            tables_to_extract = valid_tables
-        else:
-            tables_to_extract = event['extract_table']
-            if type(tables_to_extract) is not list:
-                raise \
-                    Exception("Event payload requires list in 'extract_table'")
-        db_secret_string = os.environ['OI_TOTESYS_SECRET_STRING']  \
-            if 'OI_TOTESYS_SECRET_STRING' in \
-            os.environ else retrieve_entry('totesys_db')
+        db_secret_string = (os.environ['OI_TOTESYS_SECRET_STRING']
+                            if 'OI_TOTESYS_SECRET_STRING' in
+                            os.environ else retrieve_entry('totesys_db'))
         db_secret_json = json.loads(db_secret_string)
         extractor = Extractor(**db_secret_json)
         saver = Saver()
-        storer_secret_string = os.environ['OI_STORER_SECRET_STRING'] \
-            if 'OI_STORER_SECRET_STRING' in \
-            os.environ else retrieve_entry('storer_info')
+        storer_secret_string = (os.environ['OI_STORER_SECRET_STRING']
+                                if 'OI_STORER_SECRET_STRING' in
+                                os.environ else retrieve_entry('storer_info'))
         storer_secret_json = json.loads(storer_secret_string)
         storer = Storer(**storer_secret_json)
         for table in tables_to_extract:
-            if table in valid_tables:
+            if table in VALID_TABLES:
                 extract_fn = getattr(extractor, f'extract_{table}')
                 data = extract_fn()
-                file_name = f'{table}.csv'
+                file_name = f'/tmp/{table}.csv'
                 if not saver.save_data(data, file_name):
                     raise Exception(f"Could not save table '{table}' data")
                 logger.info(
@@ -82,3 +91,4 @@ def extract_db_handler(event, context):
     finally:
         if 'extractor' in locals():
             extractor.close()
+
