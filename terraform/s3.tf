@@ -6,8 +6,8 @@ resource "aws_s3_bucket" "ingestion_zone_bucket" {
   bucket_prefix = var.ingestion_zone_bucket_prefix
 }
 
-resource "aws_s3_bucket" "transformed_bucket" {
-  bucket_prefix = var.transformed_bucket_prefix
+resource "aws_s3_bucket" "transformed_zone_bucket" {
+  bucket_prefix = var.transformed_zone_bucket_prefix
 }
 
 resource "aws_s3_object" "ingestion_lambda_code" {

@@ -11,9 +11,9 @@ variable "ingestion_zone_bucket_prefix" {
 }
 
 #trasformed bucket prefix
-variable "transformed_bucket_prefix" {
+variable "transformed_zone_bucket_prefix" {
   type    = string
-  default = "transformed-zone"
+  default = "transformed-zone-"
 }
 
 #lambda handler for ingestion zone lambda
