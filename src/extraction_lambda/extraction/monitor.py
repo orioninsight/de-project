@@ -22,13 +22,16 @@ class Monitor:
 
     def has_state_changed(self):
         self.get_db_stats()
-        self.get_current_state()
-        if self.current_state != self.new_state:
-            self.save_state()
-            logger.info("State has changed")
-            return True
+        if self.get_current_state() in [1, -1]:
+            if self.current_state != self.new_state:
+                self.save_state()
+                logger.info("State has changed")
+
+                return True
+            else:
+                logger.info("State hasn't changed")
+                return False
         else:
-            logger.info("State hasn't changed")    
             return False
 
     def get_db_stats(self):

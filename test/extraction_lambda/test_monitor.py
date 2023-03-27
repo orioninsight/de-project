@@ -35,29 +35,14 @@ def s3(aws_credentials):
 @pytest.fixture(scope='function')
 @patch.object(Extractor, 'create_connection')
 def extractor(mock_conn):
-    creds = (os.environ['OI_TOTESYS_SECRET_STRING']
-             if 'OI_TOTESYS_SECRET_STRING' in os.environ
-             else retrieve_entry('totesys_db'))
-    return Extractor(**json.loads(creds))
+    creds = {"host": "HOST", "port": "PORT", "user": "USER",
+             "password": "PASSWORD", "database": "DB"}
+    return Extractor(**creds)
 
 
 @pytest.fixture(scope="function")
 def monitor(extractor):
     return Monitor(S3_TEST_BUCKET_NAME, extractor)
-
-
-@patch('extraction.extractor.Extractor.extract_db_stats',
-       return_value={"tup_deleted": 0, "tup_updated": 0, "tup_inserted": 0})
-def test_has_state_changed_is_false_given_unchanged_state(m, monitor):
-    monitor.current_state = {"tup_deleted": 0,
-                             "tup_updated": 0, "tup_inserted": 0}
-    assert not monitor.has_state_changed()
-
-
-@patch('extraction.extractor.Extractor.extract_db_stats',
-       return_value={"tup_deleted": 2, "tup_updated": 1, "tup_inserted": 0})
-def test_has_state_changed_returns_true_given_changed_state(m, monitor):
-    assert monitor.has_state_changed()
 
 
 @patch('extraction.extractor.Extractor.extract_db_stats',
@@ -75,8 +60,7 @@ def test_get_current_state_returns_1_if_key_exists(s3, monitor):
     assert monitor.get_current_state() == 1
 
 
-def test_get_current_state_returns_minus_1_if_s3_key_does_not_exist(s3,
-                                                                    monitor):
+def test_get_current_state_returns_minus_1_if_s3_key_does_not_exist(s3, monitor):
     assert monitor.get_current_state() == -1
 
 
@@ -121,12 +105,19 @@ def test_has_state_changed_returns_true_if_state_changed(mock_db, s3, monitor):
     db_state = {"tup_deleted": 0, "tup_updated": 0, "tup_inserted": 0}
     s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
                   Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
-    assert monitor.has_state_changed() == True
+    assert monitor.has_state_changed()
 
 
-@patch("extraction.monitor.Monitor.get_db_stats", return_value={"tup_deleted": 1, "tup_updated": 3, "tup_inserted": 4})
-def test_has_state_changed_returns_false_if_state_not_changed(s3, monitor):
-    db_state = {"tup_deleted": 1, "tup_updated": 3, "tup_inserted": 4}
-    s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
-                  Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
-    assert monitor.has_state_changed() == False
+@patch("extraction.monitor.Monitor.get_db_stats")
+@patch("extraction.monitor.Monitor.get_current_state")
+def test_has_state_changed_returns_false_if_state_not_changed(a, b, s3, monitor):
+    monitor.new_state = {"tup_deleted": 1, "tup_updated": 3, "tup_inserted": 4}
+    monitor.current_state = {"tup_deleted": 1,
+                             "tup_updated": 3, "tup_inserted": 4}
+    assert not monitor.has_state_changed()
+
+
+@patch("extraction.monitor.Monitor.get_db_stats")
+def test_has_state_changed_returns_true_if_no_state_file_found(a, s3, monitor):
+    monitor.new_state = {"tup_deleted": 1, "tup_updated": 3, "tup_inserted": 4}
+    assert monitor.has_state_changed()

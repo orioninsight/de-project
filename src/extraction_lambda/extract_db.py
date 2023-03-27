@@ -5,6 +5,7 @@ from extraction.extractor import Extractor
 from extraction.saver import Saver
 from extraction.storer import Storer
 from secret_manager.retrieve_entry import retrieve_entry
+from extraction.monitor import Monitor
 
 """ The logging level is set to INFO, which means that only messages of
     level INFO will be logged.
@@ -17,6 +18,9 @@ VALID_TABLES = ['address', 'design', 'counterparty',
                 'payment', 'transaction', 'payment_type',
                 'currency', 'department']
 
+extractor = None
+saver = None
+storer = None
 
 def extract_db_handler(event, context):
     try:
@@ -28,7 +32,20 @@ def extract_db_handler(event, context):
         if type(tables_to_extract) is not list:
             raise (Exception("Event payload requires list "
                              "in 'extract_table'"))
-        extract_db_helper(tables_to_extract)
+        db_secret_string = (os.environ['OI_TOTESYS_SECRET_STRING']
+                            if 'OI_TOTESYS_SECRET_STRING' in
+                            os.environ else retrieve_entry('totesys_db'))
+        db_secret_json = json.loads(db_secret_string)
+        extractor = Extractor(**db_secret_json)
+        saver = Saver()
+        storer_secret_string = (os.environ['OI_STORER_SECRET_STRING']
+                                if 'OI_STORER_SECRET_STRING' in
+                                os.environ else retrieve_entry('storer_info'))
+        storer_secret_json = json.loads(storer_secret_string)
+        storer = Storer(**storer_secret_json)
+        monitor = Monitor(storer_secret_json["s3_bucket_name"], extractor)
+        if monitor.has_state_changed():
+            extract_db_helper(tables_to_extract)
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
         raise RuntimeError(e)
@@ -58,17 +75,6 @@ def extract_db_helper(tables_to_extract):
     """  # noqa: E501
 
     try:
-        db_secret_string = (os.environ['OI_TOTESYS_SECRET_STRING']
-                            if 'OI_TOTESYS_SECRET_STRING' in
-                            os.environ else retrieve_entry('totesys_db'))
-        db_secret_json = json.loads(db_secret_string)
-        extractor = Extractor(**db_secret_json)
-        saver = Saver()
-        storer_secret_string = (os.environ['OI_STORER_SECRET_STRING']
-                                if 'OI_STORER_SECRET_STRING' in
-                                os.environ else retrieve_entry('storer_info'))
-        storer_secret_json = json.loads(storer_secret_string)
-        storer = Storer(**storer_secret_json)
         for table in tables_to_extract:
             if table in VALID_TABLES:
                 extract_fn = getattr(extractor, f'extract_{table}')
@@ -91,4 +97,3 @@ def extract_db_helper(tables_to_extract):
     finally:
         if 'extractor' in locals():
             extractor.close()
-
