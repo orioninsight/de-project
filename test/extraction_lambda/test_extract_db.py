@@ -1,11 +1,12 @@
 from pathlib import Path
 from unittest.mock import patch
-from extract_db import (extract_db_handler, VALID_TABLES)
+from extract_db import (extract_db_handler, extract_db_helper, VALID_TABLES)
 from extraction.extractor import Extractor
 import pytest
 import boto3
 import os
 from datetime import datetime
+
 
 S3_TEST_BUCKET_NAME = f'''test-extraction-bucket-{
     int(datetime.now().timestamp())}'''
@@ -48,7 +49,7 @@ def downloaded_file(request):
 
 def test_raises_unsupported_table_exception(storer_info):
     with pytest.raises(Exception, match='Unsupported table'):
-        extract_db_handler({'extract_table': ['UNSUPPORTED_TABLE']}, None)
+        extract_db_helper(['UNSUPPORTED_TABLE'])
 
 
 def test_raises_exception_given_lambda_payload():
@@ -68,6 +69,9 @@ def test_extracts_db_table_and_stores_file_in_s3(s3, storer_info,
 
 
 @patch('extract_db.extract_db_helper')
-def test_extracts_all_db_tables_given_no_payload(mock_db_helper):
+@patch('extract_db.Monitor.has_state_changed', return_value=True)
+def test_extracts_all_db_tables_given_no_payload(mock_monitor, mock_db_helper):
     extract_db_handler({}, None)
     mock_db_helper.assert_called_once_with(VALID_TABLES)
+
+

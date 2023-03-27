@@ -22,15 +22,23 @@ class Monitor:
 
     def has_state_changed(self):
         self.get_db_stats()
-        if self.get_current_state() in [1, -1]:
-            if self.current_state != self.new_state:
-                self.save_state()
-                logger.info("State has changed")
-
-                return True
-            else:
-                logger.info("State hasn't changed")
-                return False
+        res = self.get_current_state()
+        if res == 1:
+            print(self.current_state)
+            for tup_key in Monitor.STAT_KEYS:
+                a = self.current_state[tup_key]
+                b = self.new_state[tup_key]
+                if a != b:
+                    logger.info(f"State ({tup_key}) has changed")
+                    self.save_state()
+                    return True
+            logger.info("State hasn't changed")
+            return False
+        elif res == -1:
+            logger.info("No DB state file found")
+            self.save_state()
+            logger.info("Created new DB state file")
+            return True
         else:
             return False
 
@@ -59,6 +67,7 @@ class Monitor:
                     raise Exception("S3 object db_state has missing/invalid"
                                     f' JSON entry: ({stat_key}:{stats[stat_key]})')
             self.current_state = stats
+            return 1
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
                 logger.error(e)
@@ -66,4 +75,3 @@ class Monitor:
         except Exception as e:
             logger.error(e)
             return 0
-        return 1

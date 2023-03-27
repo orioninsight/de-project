@@ -22,7 +22,9 @@ extractor = None
 saver = None
 storer = None
 
+
 def extract_db_handler(event, context):
+    global extractor, saver, storer
     try:
         tables_to_extract = []
         if event is None or event == {} or 'extract_table' not in event:
@@ -31,7 +33,7 @@ def extract_db_handler(event, context):
             tables_to_extract = event['extract_table']
         if type(tables_to_extract) is not list:
             raise (Exception("Event payload requires list "
-                             "in 'extract_table'"))
+                             f"in 'extract_table' but got {event} instead"))
         db_secret_string = (os.environ['OI_TOTESYS_SECRET_STRING']
                             if 'OI_TOTESYS_SECRET_STRING' in
                             os.environ else retrieve_entry('totesys_db'))
@@ -49,7 +51,9 @@ def extract_db_handler(event, context):
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
         raise RuntimeError(e)
-
+    finally:
+        if 'extractor' in globals() and extractor is not None:
+            extractor.close()
 
 def extract_db_helper(tables_to_extract):
     """ AWS Lambda to extract tables from Totesys DB
@@ -74,26 +78,20 @@ def extract_db_helper(tables_to_extract):
         or as JSON: {"s3_bucket_name":"BUCKET_NAME"}
     """  # noqa: E501
 
-    try:
-        for table in tables_to_extract:
-            if table in VALID_TABLES:
-                extract_fn = getattr(extractor, f'extract_{table}')
-                data = extract_fn()
-                file_name = f'/tmp/{table}.csv'
-                if not saver.save_data(data, file_name):
-                    raise Exception(f"Could not save table '{table}' data")
-                logger.info(
-                    f'Data from table {table} saved to file {file_name}')
-                if not storer.store_file(file_name, table):
-                    raise Exception(
-                        f"""Could not store data file
-                            '{file_name}' of table '{table}'""")
-                logger.info(f'Data from table {table} stored on S3')
-            else:
-                raise Exception(f"Unsupported table '{table}' to extract")
-    except Exception as e:
-        logger.error(f'An error occurred extracting the data: {e}')
-        raise RuntimeError(e)
-    finally:
-        if 'extractor' in locals():
-            extractor.close()
+    for table in tables_to_extract:
+        if table in VALID_TABLES:
+            extract_fn = getattr(extractor, f'extract_{table}')
+            data = extract_fn()
+            file_name = f'/tmp/{table}.csv'
+            if not saver.save_data(data, file_name):
+                raise Exception(f"Could not save table '{table}' data")
+            logger.info(
+                f'Data from table {table} saved to file {file_name}')
+            if not storer.store_file(file_name, table):
+                raise Exception(
+                    f"""Could not store data file
+                        '{file_name}' of table '{table}'""")
+            logger.info(f'Data from table {table} stored on S3')
+        else:
+            raise Exception(f"Unsupported table '{table}' to extract")
+
