@@ -10,6 +10,12 @@ variable "ingestion_zone_bucket_prefix" {
   default = "ingestion-zone-"
 }
 
+#trasformed bucket prefix
+variable "transformed_zone_bucket_prefix" {
+  type    = string
+  default = "transformed-zone-"
+}
+
 #lambda handler for ingestion zone lambda
 variable "extraction_lambda_handler" {
   type    = string

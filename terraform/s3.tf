@@ -6,6 +6,10 @@ resource "aws_s3_bucket" "ingestion_zone_bucket" {
   bucket_prefix = var.ingestion_zone_bucket_prefix
 }
 
+resource "aws_s3_bucket" "transformed_zone_bucket" {
+  bucket_prefix = var.transformed_zone_bucket_prefix
+}
+
 resource "aws_s3_object" "ingestion_lambda_code" {
   key         = "extraction_lambda/extraction_lambda.zip"
   source      = data.local_file.ingestion_lambda_archive.filename
@@ -15,4 +19,6 @@ resource "aws_s3_object" "ingestion_lambda_code" {
     data.local_file.ingestion_lambda_archive
   ]
 }
+
+
 
