@@ -49,7 +49,8 @@ def monitor(extractor):
 @patch('extraction.extractor.Extractor.extract_db_stats',
        return_value={"tup_deleted": 0, "tup_updated": 0, "tup_inserted": 0})
 def test_has_state_changed_is_false_given_unchanged_state(m, monitor):
-    monitor.current_state = {"tup_deleted": 0, "tup_updated": 0, "tup_inserted": 0}
+    monitor.current_state = {"tup_deleted": 0,
+                             "tup_updated": 0, "tup_inserted": 0}
     assert not monitor.has_state_changed()
 
 
@@ -72,7 +73,7 @@ def test_get_current_state_returns_1_if_key_exists(s3, monitor):
     s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
                   Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
     assert monitor.get_current_state() == 1
-   
+
 
 def test_get_current_state_returns_minus_1_if_s3_key_does_not_exist(s3,
                                                                     monitor):
@@ -98,19 +99,34 @@ def test_get_current_state_returns_0_if_stats_json_missing_key(s3, monitor):
     s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
                   Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
     assert monitor.get_current_state() == 0
-    
 
-def test_save_state_saves_new_state_to_s3_bucket(s3,monitor):
+
+def test_save_state_saves_new_state_to_s3_bucket(s3, monitor):
     with patch('extraction.monitor.datetime') as mock_date:
-        mock_date.now.return_value = datetime.datetime(2023,3,27,1,2,3,4)
-        monitor.new_state = {"tup_deleted": 2, "tup_updated": 1, "tup_inserted": 2}
+        mock_date.now.return_value = datetime.datetime(2023, 3, 27, 1, 2, 3, 4)
+        monitor.new_state = {"tup_deleted": 2,
+                             "tup_updated": 1, "tup_inserted": 2}
         monitor.save_state()
-        
-        obj = s3.get_object(Bucket=S3_TEST_BUCKET_NAME, Key=Monitor.DB_STATE_KEY)
+
+        obj = s3.get_object(Bucket=S3_TEST_BUCKET_NAME,
+                            Key=Monitor.DB_STATE_KEY)
         test_stats = json.loads(obj['Body'].read())
-        
+
         assert test_stats == monitor.new_state
-        assert test_stats ['retrieved_at'] == 1679875323.000004
-    
-    
-    
+        assert test_stats['retrieved_at'] == 1679875323.000004
+
+
+@patch("extraction.monitor.Monitor.get_db_stats", return_value={"tup_deleted": 1, "tup_updated": 3, "tup_inserted": 4})
+def test_has_state_changed_returns_true_if_state_changed(mock_db, s3, monitor):
+    db_state = {"tup_deleted": 0, "tup_updated": 0, "tup_inserted": 0}
+    s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
+                  Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
+    assert monitor.has_state_changed() == True
+
+
+@patch("extraction.monitor.Monitor.get_db_stats", return_value={"tup_deleted": 1, "tup_updated": 3, "tup_inserted": 4})
+def test_has_state_changed_returns_false_if_state_not_changed(s3, monitor):
+    db_state = {"tup_deleted": 1, "tup_updated": 3, "tup_inserted": 4}
+    s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
+                  Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
+    assert monitor.has_state_changed() == False
