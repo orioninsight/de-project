@@ -55,7 +55,7 @@ lambda-deployment-packages:
     exit 1; \
 	fi
 
-	mkdir ./archives/tmp -p
+	mkdir -p ./archives/tmp
 	$(call execute_in_env, $(PIP) install -r ./deployment/extraction_requirements.txt -t ./archives/tmp/)
 	cp -r ./src/extraction_lambda/* ./archives/tmp/
 	cd ./archives/tmp && zip -r ../extraction_lambda.zip ./*
