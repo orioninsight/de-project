@@ -130,10 +130,9 @@ dmypy.json
 
 # terraform
 .terraform*
-*.zip
 
-# installed lambda dependencies
-/src/extraction_lambda/dependencies/
+#lambda deployment packages
+/archives
 
 secrets.txt
 _env.py

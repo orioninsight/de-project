@@ -64,7 +64,7 @@ def extract_db_handler(event, context):
             if table in valid_tables:
                 extract_fn = getattr(extractor, f'extract_{table}')
                 data = extract_fn()
-                file_name = f'{table}.csv'
+                file_name = f'/tmp/{table}.csv'
                 if not saver.save_data(data, file_name):
                     raise Exception(f"Could not save table '{table}' data")
                 logger.info(

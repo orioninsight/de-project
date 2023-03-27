@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - actions
+      - main
 
 jobs:
   run-tests:
@@ -18,6 +18,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
+      - name: Configure Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
       - name: Install Make
         run: sudo apt install make -y
       - name: Install Application Requirements
@@ -40,8 +46,12 @@ jobs:
           python-version: "3.9"
       - name: Install Make
         run: sudo apt install make -y
+      - name: Install zip
+        run: sudo apt install zip -y
       - name: Install Application Requirements
         run: make requirements
+      - name: Create Lambda deployment packages
+        run: make lambda-deployment-packages
       - name: Install Terraform
         uses: hashicorp/setup-terraform@v2
       - name: Configure Credentials
