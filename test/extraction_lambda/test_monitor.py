@@ -1,4 +1,5 @@
 import json
+import datetime
 from unittest.mock import patch
 from extraction.monitor import Monitor
 import pytest
@@ -97,3 +98,19 @@ def test_get_current_state_returns_0_if_stats_json_missing_key(s3, monitor):
     s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
                   Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
     assert monitor.get_current_state() == 0
+    
+
+def test_save_state_saves_new_state_to_s3_bucket(s3,monitor):
+    with patch('extraction.monitor.datetime') as mock_date:
+        mock_date.now.return_value = datetime.datetime(2023,3,27,1,2,3,4)
+        monitor.new_state = {"tup_deleted": 2, "tup_updated": 1, "tup_inserted": 2}
+        monitor.save_state()
+        
+        obj = s3.get_object(Bucket=S3_TEST_BUCKET_NAME, Key=Monitor.DB_STATE_KEY)
+        test_stats = json.loads(obj['Body'].read())
+        
+        assert test_stats == monitor.new_state
+        assert test_stats ['retrieved_at'] == 1679875323.000004
+    
+    
+    

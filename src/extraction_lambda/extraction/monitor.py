@@ -26,8 +26,14 @@ class Monitor:
         self.new_state = self.extractor.extract_db_stats()
 
     def save_state(self):
-        pass
-
+        try:
+            self.new_state['retrieved_at'] = datetime.now().timestamp()
+            self.s3_client.put_object(Bucket=self.s3_bucket_name,Body=json.dumps(self.new_state),Key=Monitor.DB_STATE_KEY)
+        except Exception as e:
+            logger.error(e)
+            return False
+        return True
+        
     def get_current_state(self):
         stat_keys = ['tup_inserted', 'tup_updated', 'tup_deleted']
         try:
@@ -40,7 +46,6 @@ class Monitor:
                     raise Exception("S3 object db_state has missing/invalid"
                                     f' JSON entry: ({stat_key}:{stats[stat_key]})')
             self.current_state = stats
-            self.current_state['retrieved_at'] = datetime.now().timestamp()
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
                 logger.error(e)
