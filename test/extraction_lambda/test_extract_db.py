@@ -59,15 +59,15 @@ def test_raises_exception_given_lambda_payload():
         extract_db_handler({'extract_table': 123}, None)
 
 
-# def test_extracts_db_table_and_stores_file_in_s3(s3, storer_info,
-#                                                  downloaded_file):
-#     table_name, file_name = downloaded_file
-#     extract_db_handler({'extract_table': [table_name]}, None)
-#     s3.download_file(S3_TEST_BUCKET_NAME,
-#                      table_name, file_name)
-#     with open(file_name, 'r', encoding='utf-8') as f:
-#         assert f'{table_name}_id' in f.readline().split(',')
-#         assert len(f.readlines()) > 0
+def test_extracts_db_table_and_stores_file_in_s3(s3, storer_info,
+                                                 downloaded_file):
+    table_name, file_name = downloaded_file
+    extract_db_handler({'extract_table': [table_name]}, None)
+    s3.download_file(S3_TEST_BUCKET_NAME,
+                     table_name, file_name)
+    with open(file_name, 'r', encoding='utf-8') as f:
+        assert f'{table_name}_id' in f.readline().split(',')
+        assert len(f.readlines()) > 0
 
 
 @patch('extract_db.extract_db_helper')

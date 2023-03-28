@@ -7,7 +7,7 @@ import os
 from moto import mock_s3
 import boto3
 from extraction.extractor import Extractor
-from secret_manager.retrieve_entry import retrieve_entry
+
 
 # monitor returns boolean
 
@@ -65,7 +65,7 @@ def test_get_current_state_returns_minus_1_if_s3_key_does_not_exist(s3,
     assert monitor.get_current_state() == -1
 
 
-def test_get_current_state_returns_0_if_stats_json_missing_key(s3, monitor):
+def test_get_current_state_returns_0_if_stats_json_mispelt_key(s3, monitor):
     db_state = {"tup_delete": 0, "tup_update": 0, "tup_inserted": 0}
     s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
                   Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
@@ -111,7 +111,6 @@ def test_has_state_changed_returns_true_if_state_changed(a, b, s3, monitor):
     assert monitor.has_state_changed()
 
 
-
 @patch("extraction.monitor.Monitor.get_db_stats")
 @patch("extraction.monitor.Monitor.get_current_state")
 def test_has_state_changed_returns_false_if_state_not_changed(a, b, s3,
@@ -134,4 +133,3 @@ def test_has_state_changed_is_true_if_no_state_file_and_creates_it(a, s3,
     assert test_stats['tup_updated'] == 3
     assert test_stats['tup_inserted'] == 4
     assert 'retrieved_at' in test_stats
-
