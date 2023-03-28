@@ -2,12 +2,20 @@ import pg8000.native
 
 
 class Extractor:
-    """A class for extracting data from a PostgreSQL database \
+    """A class for extracting data from a PostgreSQL database
           using conn as attributes."""
 
+    conn = None
+
     def __init__(self, user, password, host, port, database):
-        self.conn = pg8000.native.Connection(
-            user, password=password, port=port, database=database, host=host)
+        self.database = database
+        self.create_connection(user, password, host, port, database)
+
+    def create_connection(self, user, password, host, port, database):
+        if self.conn is None:
+            self.conn = pg8000.native.Connection(
+                user, password=password, port=port,
+                database=database, host=host)
 
     """ Convert Extractor to Context Manager using __enter__ and __exit__"""
 
@@ -15,9 +23,10 @@ class Extractor:
         """ Closes the database connection"""
         if self.conn:
             self.conn.close()
+            del self.conn
 
     def create_dicts(self, columns, rows):
-        """This method returns a list of dictionaries, which represents \
+        """This method returns a list of dictionaries, which represents
               a row for each dictionary in the set."""
 
         return [{column: row[i]
@@ -26,7 +35,7 @@ class Extractor:
                 ]
 
     def extract_address(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents an address record."""
 
         query_string = """SELECT address_id,address_line_1,address_line_2,
@@ -37,7 +46,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_counterparty(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
         where each dictionary represents a counter party record."""
 
         query_string = """SELECT counterparty_id, counterparty_legal_name,
@@ -48,7 +57,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_design(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a design record."""
 
         query_string = """SELECT design_id, created_at, last_updated,
@@ -58,7 +67,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_sales_order(self,):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a sales order record."""
 
         query_string = """SELECT sales_order_id, created_at, last_updated,
@@ -70,7 +79,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_transaction(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a transaction record."""
 
         query_string = """SELECT transaction_id, transaction_type,
@@ -81,7 +90,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_payment_type(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a payment type record."""
 
         query_string = """SELECT payment_type_id, payment_type_name,
@@ -91,7 +100,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_payment(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a payment record."""
 
         query_string = """SELECT payment_id, created_at, last_updated,
@@ -103,7 +112,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_currency(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a currency record."""
 
         query_string = """SELECT currency_id, currency_code,
@@ -113,7 +122,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_staff(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a staff record."""
 
         query_string = """SELECT staff_id, first_name, last_name,
@@ -124,7 +133,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_department(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a department record."""
 
         query_string = """SELECT department_id, department_name, location,
@@ -134,7 +143,7 @@ class Extractor:
         return self.create_dicts(columns, rows)
 
     def extract_purchase_order(self):
-        """This method returns a list of dictionaries, \
+        """This method returns a list of dictionaries,
             where each dictionary represents a purchase order record."""
 
         query_string = """SELECT purchase_order_id, created_at, last_updated,
@@ -145,3 +154,13 @@ class Extractor:
         rows = self.conn.run(query_string)
         columns = [meta["name"]for meta in self.conn.columns]
         return self.create_dicts(columns, rows)
+ 
+    def extract_db_stats(self):
+        """This method returns a list of dictionaries, 
+        where each dictionary represents the state of db."""
+
+        query_string = """SELECT tup_inserted, tup_updated, tup_deleted
+        FROM pg_stat_database WHERE datname='totesys' ORDER BY datid DESC;"""
+        rows = self.conn.run(query_string)
+        columns = [meta["name"]for meta in self.conn.columns]
+        return self.create_dicts(columns, rows)[0]
