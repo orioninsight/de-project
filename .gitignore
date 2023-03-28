@@ -139,3 +139,4 @@ _env.py
 venv/*
 
 *.csv
+*.zip

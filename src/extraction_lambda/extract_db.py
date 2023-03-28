@@ -55,6 +55,7 @@ def extract_db_handler(event, context):
         if 'extractor' in globals() and extractor is not None:
             extractor.close()
 
+
 def extract_db_helper(tables_to_extract):
     """ AWS Lambda to extract tables from Totesys DB
 
@@ -94,4 +95,3 @@ def extract_db_helper(tables_to_extract):
             logger.info(f'Data from table {table} stored on S3')
         else:
             raise Exception(f"Unsupported table '{table}' to extract")
-
