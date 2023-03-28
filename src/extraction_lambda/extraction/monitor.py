@@ -24,11 +24,8 @@ class Monitor:
         self.get_db_stats()
         res = self.get_current_state()
         if res == 1:
-            print(self.current_state)
             for tup_key in Monitor.STAT_KEYS:
-                a = self.current_state[tup_key]
-                b = self.new_state[tup_key]
-                if a != b:
+                if self.current_state[tup_key] != self.new_state[tup_key]:
                     logger.info(f"State ({tup_key}) has changed")
                     self.save_state()
                     return True

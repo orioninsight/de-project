@@ -124,7 +124,8 @@ def test_has_state_changed_returns_false_if_state_not_changed(a, b, s3,
 
 
 @patch("extraction.monitor.Monitor.get_db_stats")
-def test_has_state_changed_returns_true_if_no_state_file_found(a, s3, monitor):
+def test_has_state_changed_is_true_if_no_state_file_and_creates_it(a, s3,
+                                                                   monitor):
     monitor.new_state = {"tup_deleted": 1, "tup_updated": 3, "tup_inserted": 4}
     monitor.has_state_changed()
     obj = s3.get_object(Bucket=S3_TEST_BUCKET_NAME, Key=Monitor.DB_STATE_KEY)
