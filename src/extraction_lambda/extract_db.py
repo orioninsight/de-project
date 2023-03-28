@@ -48,6 +48,7 @@ def extract_db_handler(event, context):
         monitor = Monitor(storer_secret_json["s3_bucket_name"], extractor)
         if monitor.has_state_changed():
             extract_db_helper(tables_to_extract)
+            call_transformation_lambda(event, context)
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
         raise RuntimeError(e)
@@ -95,3 +96,21 @@ def extract_db_helper(tables_to_extract):
             logger.info(f'Data from table {table} stored on S3')
         else:
             raise Exception(f"Unsupported table '{table}' to extract")
+
+
+def call_transformation_lambda(event, context):
+    return True
+    # client = boto3.client('lambda')
+    # inputParams = {
+    #     "ProductName": "iPhone SE",
+    #     "Quantity": 2,
+    #     "UnitPrice": 499
+    # }
+
+    # response = client.invoke(
+    #     FunctionName='arn:aws:lambda:us-east-1:441836517159:function:transformation-lambda',
+    #     InvocationType='RequestResponse',
+    #     Payload=json.dumps(inputParams)
+    # )
+
+    # return json.load(response['Payload'])
