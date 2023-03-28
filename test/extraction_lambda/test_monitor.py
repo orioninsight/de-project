@@ -88,6 +88,7 @@ def test_get_current_state_returns_0_if_stats_json_missing_key(s3, monitor):
 def test_save_state_saves_new_state_to_s3_bucket(s3, monitor):
     with patch('extraction.monitor.Monitor.get_utc_timestamp') as\
             mock_timestamp:
+
         mock_timestamp.return_value = 1679878923.000004
 
         monitor.new_state = {"tup_deleted": 2,
