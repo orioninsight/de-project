@@ -42,9 +42,13 @@ class Monitor:
     def get_db_stats(self):
         self.new_state = self.extractor.extract_db_stats()
 
+    def get_utc_timestamp(self):
+        return datetime.now().replace(
+            tzinfo=timezone.utc).timestamp()
+
     def save_state(self):
         try:
-            self.new_state['retrieved_at'] = datetime.now().timestamp()
+            self.new_state['retrieved_at'] = self.get_utc_timestamp()
             self.s3_client.put_object(Bucket=self.s3_bucket_name, Body=json.dumps(
                 self.new_state), Key=Monitor.DB_STATE_KEY)
             logger.info("State saved to S3")
