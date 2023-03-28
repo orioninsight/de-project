@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
+from unittest import mock
 from unittest.mock import patch
-from extract_db import (extract_db_handler, extract_db_helper, VALID_TABLES)
+from extract_db import (extract_db_handler, extract_db_helper,
+                        VALID_TABLES, call_transformation_lambda)
 from extraction.extractor import Extractor
 from extraction.monitor import Monitor
 from moto import mock_lambda
@@ -94,17 +96,18 @@ def test_extraction_runs_if_no_state_file_and_else_not(mock_db_helper, s3):
     mock_db_helper.assert_called_once_with(VALID_TABLES)
 
 
-@pytest.fixture(scope='function')
-def tf_lambda():
-    with mock_lambda():
-        lambda_client = boto3.client("lambda")
-        yield lambda_client
+# @pytest.fixture(scope='function')
+# def tf_lambda():
+#     with mock_lambda():
+#         lambda_client = boto3.client("lambda")
+#         lambda_client.create_function(
+#             FunctionName="test_tf_lambda", Role="arn:aws:iam::441836517159:role/service-role/transformation-lambda-role-k69xuhxl", Runtime="python3.9", Code={"ZipFile": "tf_lambda.zip"})
+#         yield lambda_client
 
 
 @patch('extract_db.extract_db_helper')
 @patch('extraction.monitor.Monitor.has_state_changed', return_value=True)
 @patch('extract_db.call_transformation_lambda')
-def test_extraction_calls_transformation_lambda_if_db_changed(mock_monitor, mock_db_helper, mock_call_lambda):
+def test_extraction_calls_transformation_lambda_if_db_changed(mock_call_tf_lambda, mock_monitor, mock_db_helper):
     extract_db_handler({}, None)
-
-    mock_call_lambda.assert_called_once()
+    mock_call_tf_lambda.assert_called_once()
