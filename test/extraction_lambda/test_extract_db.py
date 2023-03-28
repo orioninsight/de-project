@@ -1,12 +1,10 @@
 import json
 from pathlib import Path
-from unittest import mock
 from unittest.mock import patch
 from extract_db import (extract_db_handler, extract_db_helper,
-                        VALID_TABLES, call_transformation_lambda)
+                        VALID_TABLES)
 from extraction.extractor import Extractor
 from extraction.monitor import Monitor
-from moto import mock_lambda
 import pytest
 import boto3
 import os
@@ -62,7 +60,7 @@ def test_raises_exception_given_lambda_payload():
         extract_db_handler({'extract_table': 123}, None)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 def test_extracts_db_table_and_stores_file_in_s3(s3, storer_info,
                                                  downloaded_file):
     table_name, file_name = downloaded_file
@@ -96,18 +94,24 @@ def test_extraction_runs_if_no_state_file_and_else_not(mock_db_helper, s3):
     mock_db_helper.assert_called_once_with(VALID_TABLES)
 
 
+"""
 # @pytest.fixture(scope='function')
 # def tf_lambda():
 #     with mock_lambda():
 #         lambda_client = boto3.client("lambda")
 #         lambda_client.create_function(
-#             FunctionName="test_tf_lambda", Role="arn:aws:iam::441836517159:role/service-role/transformation-lambda-role-k69xuhxl", Runtime="python3.9", Code={"ZipFile": "tf_lambda.zip"})
+#             FunctionName="test_tf_lambda", Role="arn:aws:iam::441836517159:
+role/service-role/transformation-lambda-role-k69xuhxl", Runtime="python3.9",
+#  Code={"ZipFile": "tf_lambda.zip"})
 #         yield lambda_client
+
+"""  # noqa: E501
 
 
 @patch('extract_db.extract_db_helper')
 @patch('extraction.monitor.Monitor.has_state_changed', return_value=True)
 @patch('extract_db.call_transformation_lambda')
-def test_extraction_calls_transformation_lambda_if_db_changed(mock_call_tf_lambda, mock_monitor, mock_db_helper):
+def test_extraction_calls_transformation_lambda_if_db_changed(
+        mock_call_tf_lambda, mock_monitor, mock_db_helper):
     extract_db_handler({}, None)
     mock_call_tf_lambda.assert_called_once()

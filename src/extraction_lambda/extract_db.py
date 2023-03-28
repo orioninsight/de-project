@@ -1,6 +1,5 @@
 import os
 import logging
-import boto3
 import json
 from extraction.extractor import Extractor
 from extraction.saver import Saver
