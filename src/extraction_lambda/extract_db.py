@@ -1,5 +1,6 @@
 import os
 import logging
+import boto3
 import json
 from extraction.extractor import Extractor
 from extraction.saver import Saver
@@ -48,6 +49,7 @@ def extract_db_handler(event, context):
         monitor = Monitor(storer_secret_json["s3_bucket_name"], extractor)
         if monitor.has_state_changed():
             extract_db_helper(tables_to_extract)
+            call_transformation_lambda()
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
         raise RuntimeError(e)
@@ -95,3 +97,21 @@ def extract_db_helper(tables_to_extract):
             logger.info(f'Data from table {table} stored on S3')
         else:
             raise Exception(f"Unsupported table '{table}' to extract")
+
+
+def call_transformation_lambda():
+    pass
+    # client = boto3.client('lambda')
+    # inputParams = {
+    #     "ProductName"   : "iPhone SE",
+    #     "Quantity"      : 2,
+    #     "UnitPrice"     : 499
+    # }
+
+    # response = client.invoke(
+    #     FunctionName = 'arn:aws:lambda:eu-west-1:890277245818:function:ChildFunction',
+    #     InvocationType = 'RequestResponse',
+    #     Payload = json.dumps(inputParams)
+    # )
+
+    # responseFromChild = json.load(response['Payload'])
