@@ -3,6 +3,7 @@ import boto3
 import os
 import json
 import logging
+import datetime
 
 
 logger = logging.getLogger('MyLogger')
@@ -63,6 +64,21 @@ def transform_design(df_design):
 def transform_address(df_address):
     return df_address.drop(columns=['created_at', 'last_updated']).rename(
         columns={'address_id': 'location_id'})
+
+
+def create_dim_date():
+    df = pd.DataFrame(pd.date_range(
+        '3/11/2022', '1/5/2023'), columns=['date'])
+    df['date_id'] = df['date'].dt.strftime('%Y%m%d').astype(int)
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month
+    df['day'] = df['date'].dt.day
+    df['day_of_week'] = df['date'].dt.dayofweek
+    df['day_name'] = df['date'].dt.strftime("%A")
+    df['month_name'] = df['date'].dt.strftime("%B")
+    df['quarter'] = df['date'].dt.quarter
+
+    return df.loc[:, df.columns != 'date']
 
 
 def merge_data_frames():

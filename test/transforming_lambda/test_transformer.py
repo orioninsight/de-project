@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_index_equal
 from src.transforming_lambda.transform import (transform_currency,
-                                               transform_design, read_csv, transform_address)
+                                               transform_design, read_csv, transform_address, create_dim_date)
 import src.transforming_lambda.transform as tf
 
 bucket_name = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
@@ -99,3 +99,12 @@ def test_transform_address_returns_correct_data_frame_structure():
     assert res_df.shape == expected_df_shape
 
     assert set(res_df.columns) == expected_df_cols
+
+
+def test_create_dim_date_creates_data_frame_structure():
+    expected_dim_date_shape = (301, 8)
+    expected_dim_date_cols = {'date_id', 'year', 'month',
+                              'day', 'day_of_week', 'day_name', 'month_name', 'quarter'}
+    res_df = create_dim_date()
+    assert res_df.shape == expected_dim_date_shape
+    assert set(res_df.columns) == expected_dim_date_cols
