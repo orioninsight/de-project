@@ -51,6 +51,9 @@ def read_csv(key):
         logger.error(f'An error occurred reading csv file: {e}')
         raise Exception()
 
+def transform_currency(df_currency):
+    return df_currency.drop(columns=['created_at','last_updated'])
+
 
 def merge_data_frames():
     pass

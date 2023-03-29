@@ -18,7 +18,7 @@ def aws_credentials():
 
 
 @mock_secretsmanager
-# @pytest.fixture(scope="function")
+
 def test_create_entry_returns_success_message():
 
     secret_id = "testSId"
@@ -32,7 +32,7 @@ def test_create_entry_returns_success_message():
 
 
 @mock_secretsmanager
-# @pytest.fixture(scope="function")
+
 def test_create_entry_creates_new_secret():
     # arrange
     secret_id = "testSId"
