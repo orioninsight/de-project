@@ -33,7 +33,8 @@ def list_csv_files():
         if file not in [item.key for item in ingestion_csv_files]:
             raise Exception('files are not complete')
 
-    return [item.key for item in ingestion_csv_files]
+    # return [item.key for item in ingestion_csv_files]
+    return file_list
 
 
 def read_csv(key):

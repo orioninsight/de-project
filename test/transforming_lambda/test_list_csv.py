@@ -37,6 +37,7 @@ def test_list_csv_files_returns_list_of_csv_files(aws_credentials):
 
     for file_name in file_list:
         s3.Object(bucket_name, f'{file_name}').put(Body=f'{file_name}')
+    s3.Object(bucket_name, 'db_state').put(Body='extra file')
 
     for file in list_csv_files():
         assert file in file_list
@@ -56,6 +57,8 @@ def test_list_csv_files_raises_exception_missing_files(aws_credentials):
 
     for file_name in file_list:
         s3.Object(bucket_name, f'{file_name}').put(Body=f'{file_name}')
+
+    s3.Object(bucket_name, 'db_state').put(Body='extra file')
 
     with pytest.raises(Exception, match='files are not complete'):
         list_csv_files()
