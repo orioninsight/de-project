@@ -46,7 +46,7 @@ def read_csv(key):
 
         obj = s3.get_object(Bucket=ingestion_bucket, Key=key)
         df = pd.read_csv(obj['Body'])
-        return {key: df}
+        return df
 
     except Exception as e:
         logger.error(f'An error occurred reading csv file: {e}')
@@ -57,5 +57,5 @@ def merge_data_frames():
     pass
 
 
-def store_parquet():
+def store_as_parquet(file_name, df):
     pass
