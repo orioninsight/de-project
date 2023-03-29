@@ -47,7 +47,7 @@ def test_read_csv_returns_data_frames(aws_credentials):
                              Key=f'{file_name}', Body=csv_data.encode('utf-8'))
     s3_client.put_object(Bucket=bucket_name,
                          Key='db_state', Body='extra file'.encode('utf-8'))
-    result = read_csv('department')['department']
+    result = read_csv('department')
 
     # Define the expected dataframe
 
