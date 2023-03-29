@@ -45,14 +45,24 @@ def read_csv(key):
 
         obj = s3.get_object(Bucket=ingestion_bucket, Key=key)
         df = pd.read_csv(obj['Body'])
-        return {key: df}
+        return df
 
     except Exception as e:
         logger.error(f'An error occurred reading csv file: {e}')
         raise Exception()
 
+
 def transform_currency(df_currency):
-    return df_currency.drop(columns=['created_at','last_updated'])
+    return df_currency.drop(columns=['created_at', 'last_updated'])
+
+
+def transform_design(df_design):
+    return df_design.drop(columns=['created_at', 'last_updated'])
+
+
+def transform_address(df_address):
+    return df_address.drop(columns=['created_at', 'last_updated']).rename(
+        columns={'address_id': 'location_id'})
 
 
 def merge_data_frames():
