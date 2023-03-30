@@ -30,6 +30,7 @@ class Monitor:
                     self.save_state()
                     return True
             logger.info("State hasn't changed")
+            self.save_state()
             return False
         elif res == -1:
             logger.info("No DB state file found")
@@ -71,8 +72,11 @@ class Monitor:
             return 1
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
-                logger.error(e)
+                logger.info('db_state key not found')
                 return -1
+            else:
+                logger.error(e)
+                return 0
         except Exception as e:
             logger.error(e)
             return 0

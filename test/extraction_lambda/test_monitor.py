@@ -85,6 +85,11 @@ def test_get_current_state_returns_0_if_stats_json_missing_key(s3, monitor):
     assert monitor.get_current_state() == 0
 
 
+def test_get_current_state_returns_0_if_non_key_client_error(s3, monitor):
+    monitor.s3_bucket_name = 'NO-SUCH-BUCKET'
+    assert monitor.get_current_state() == 0
+
+
 def test_save_state_saves_new_state_to_s3_bucket(s3, monitor):
     with patch('extraction.monitor.Monitor.get_utc_timestamp') as\
             mock_timestamp:
