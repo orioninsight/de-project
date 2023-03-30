@@ -23,16 +23,20 @@ class Transformer:
                  'payment', 'transaction', 'payment_type',
                  'currency', 'department']
 
-    def __init__(self, bucket_name):
+    def __init__(self, bucket_name, processed_bucket_name):
         self.s3_client = boto3.client('s3')
         self.s3_bucket_name = bucket_name
+        self.s3_processed_bucket_name = processed_bucket_name
 
     def list_csv_files(self):
         ingestion_csv_files = self.s3_client.list_objects_v2(
             Bucket=self.s3_bucket_name)['Contents']
         for file in Transformer.FILE_LIST:
             if file not in [item['Key'] for item in ingestion_csv_files]:
-                raise Exception('Files are not complete')
+                msg = 'ERROR: Files are not complete'
+                logger.error(msg)
+                raise Exception(msg)
+            
         return Transformer.FILE_LIST
 
     def read_csv(self, key):
