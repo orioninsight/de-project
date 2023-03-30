@@ -18,9 +18,7 @@ def aws_credentials():
 
 
 @mock_secretsmanager
-
 def test_create_entry_returns_success_message():
-
     secret_id = "testSId"
     host = 'testurl'
     port = '5432'
@@ -32,7 +30,6 @@ def test_create_entry_returns_success_message():
 
 
 @mock_secretsmanager
-
 def test_create_entry_creates_new_secret():
     # arrange
     secret_id = "testSId"

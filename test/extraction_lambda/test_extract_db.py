@@ -72,15 +72,20 @@ def test_extracts_db_table_and_stores_file_in_s3(s3, storer_info,
         assert len(f.readlines()) > 0
 
 
+@patch('extract_db.call_transformation_lambda')
 @patch('extract_db.extract_db_helper')
 @patch('extract_db.Monitor.has_state_changed', return_value=True)
-def test_extracts_all_db_tables_given_no_payload(mock_monitor, mock_db_helper):
+def test_extracts_all_db_tables_given_no_payload(mock_monitor,
+                                                 mock_db_helper,
+                                                 mock_tf_lambda):
     extract_db_handler({}, None)
     mock_db_helper.assert_called_once_with(VALID_TABLES)
 
 
+@patch('extract_db.call_transformation_lambda')
 @patch('extract_db.extract_db_helper')
-def test_extraction_runs_if_no_state_file_and_else_not(mock_db_helper, s3):
+def test_extraction_runs_if_no_state_file_and_else_not(mock_db_helper,
+                                                       mock_tf_lambda, s3):
     extract_db_handler({}, None)
     obj = s3.get_object(Bucket=S3_TEST_BUCKET_NAME, Key=Monitor.DB_STATE_KEY)
     test_stats = json.loads(obj['Body'].read())
@@ -92,20 +97,6 @@ def test_extraction_runs_if_no_state_file_and_else_not(mock_db_helper, s3):
     test_stats2 = json.loads(obj2['Body'].read())
     assert test_stats == test_stats2
     mock_db_helper.assert_called_once_with(VALID_TABLES)
-
-
-"""
-# @pytest.fixture(scope='function')
-# def tf_lambda():
-#     with mock_lambda():
-#         lambda_client = boto3.client("lambda")
-#         lambda_client.create_function(
-#             FunctionName="test_tf_lambda", Role="arn:aws:iam::441836517159:
-role/service-role/transformation-lambda-role-k69xuhxl", Runtime="python3.9",
-#  Code={"ZipFile": "tf_lambda.zip"})
-#         yield lambda_client
-
-"""  # noqa: E501
 
 
 @patch('extract_db.extract_db_helper')
