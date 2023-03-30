@@ -46,7 +46,7 @@ def extract_db_handler(event, context):
         storer_secret_json = json.loads(storer_secret_string)
         storer = Storer(**storer_secret_json)
         monitor = Monitor(storer_secret_json["s3_bucket_name"], extractor)
-        if monitor.has_state_changed():
+        if True: # if monitor.has_state_changed(): --d33k disabled monitoring
             extract_db_helper(tables_to_extract)
             call_transformation_lambda(event, context)
     except Exception as e:
