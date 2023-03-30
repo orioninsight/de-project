@@ -1,6 +1,7 @@
 from moto import mock_s3
 import boto3
 import os
+import sys
 from datetime import datetime
 import json
 import pandas as pd
@@ -9,8 +10,12 @@ from pandas.testing import assert_frame_equal, assert_series_equal
 from src.transforming_lambda.transform import Transformer
 
 bucket_name = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
-TEST_DATA_PATH = 'test/transforming_lambda/data'
-
+processed_bucket_name = f'test-processed-bucket-{int(datetime.now().timestamp())}'
+# TEST_DATA_PATH = 'test/transforming_lambda/data'
+# get dynamic data path
+script_path = os.path.abspath(__file__)
+script_dir = os.path.dirname(script_path)
+TEST_DATA_PATH = f'{script_dir}/data'
 
 @pytest.fixture(scope="module")
 def aws_credentials():
@@ -42,7 +47,7 @@ def s3(aws_credentials):
 
 @pytest.fixture(scope='module')
 def transformer(s3):
-    return Transformer(bucket_name)
+    return Transformer(bucket_name, processed_bucket_name)
 
 
 @pytest.fixture(scope="module", params=[
