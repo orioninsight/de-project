@@ -6,10 +6,10 @@ import json
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
-from src.transforming_lambda.transform import Transformer
+from src.transform_lambda.transform import Transformer
 
 bucket_name = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
-TEST_DATA_PATH = 'test/transforming_lambda/data'
+TEST_DATA_PATH = 'test/transform_lambda/data'
 
 
 @pytest.fixture(scope="module")
@@ -46,7 +46,7 @@ def transformer(s3):
 
 
 @pytest.fixture(scope="module", params=[
-    ('currency', (3, 2)),
+    ('currency', (3, 3)),
     ('design', (10, 4)),
     ('address', (10, 8))
     ])
@@ -105,8 +105,8 @@ def test_transform_currency_returns_correct_data_frame_from_s3(s3, s3_file,
 
 
 def test_transform_currency_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (3, 2)
-    expected_df_cols = {'currency_code', 'currency_id'}
+    expected_df_shape = (3, 3)
+    expected_df_cols = {'currency_code', 'currency_id', 'currency_name'}
 
     currency_df = pd.read_csv(
         f'{TEST_DATA_PATH}/currency.csv', encoding='utf-8')
