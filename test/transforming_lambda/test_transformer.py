@@ -49,7 +49,7 @@ def transformer(s3):
     ('currency', (3, 2)),
     ('design', (10, 4)),
     ('address', (10, 8))
-    ])
+])
 def s3_file(request, transformer):
     key, shape = request.param
     s3_file_df = transformer.read_csv(key)
@@ -152,3 +152,14 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
     res_df = transformer.create_dim_date()
     assert expected_dim_date_shape == res_df.shape
     assert_series_equal(res_df.iloc[0, :], expected_first_row)
+
+
+def test_transform_sales_order_returns_correct_data_frame_structure(transformer):
+    expected_df_shape = (1518, 15)
+    expected_df_cols = {'sales_record_id', 'created_date', 'created_time', 'last_updated_date', 'last_updated_time', 'sales_order_id', 'sales_staff_id',
+                        'counterparty_id', 'units_sold', 'unit_price', 'currency_id', 'design_id', 'agreed_payment_date', 'agreed_delivery_date', 'agreed_delivery_location_id'}
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
