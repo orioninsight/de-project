@@ -1,21 +1,25 @@
 from moto import mock_s3
 import boto3
 import os
-import sys
 from datetime import datetime
 import json
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
+import tempfile
+import fastparquet as fp
 from src.transforming_lambda.transform import Transformer
 
+
 bucket_name = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
-processed_bucket_name = f'test-processed-bucket-{int(datetime.now().timestamp())}'
+processed_bucket_name =\
+    f'test-processed-bucket-{int(datetime.now().timestamp())}'
 # TEST_DATA_PATH = 'test/transforming_lambda/data'
 # get dynamic data path
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 TEST_DATA_PATH = f'{script_dir}/data'
+
 
 @pytest.fixture(scope="module")
 def aws_credentials():
@@ -38,6 +42,7 @@ def s3(aws_credentials):
                      'currency', 'department']
         s3_client = boto3.client("s3")
         s3_client.create_bucket(Bucket=bucket_name)
+        s3_client.create_bucket(Bucket=processed_bucket_name)
         for file_name in file_list:
             with open(f'{TEST_DATA_PATH}/{file_name}.csv', 'rb') as f:
                 s3_client.put_object(Bucket=bucket_name,
@@ -54,7 +59,7 @@ def transformer(s3):
     ('currency', (3, 2)),
     ('design', (10, 4)),
     ('address', (10, 8))
-    ])
+])
 def s3_file(request, transformer):
     key, shape = request.param
     s3_file_df = transformer.read_csv(key)
@@ -98,6 +103,49 @@ def test_read_csv_returns_data_frame(s3, transformer):
     expected_df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
     # Test that the dataframe is equal to the expected dataframe
     assert_frame_equal(result, expected_df)
+
+
+def test_store_as_parquet_object_is_stored_bucket(s3, transformer):
+    df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
+
+    transformer.store_as_parquet('mock_address', df)
+    retrieved_parquet_metadata = transformer.s3_client.head_object(
+        Bucket=processed_bucket_name, Key='mock_address')
+
+    assert retrieved_parquet_metadata is not None
+
+
+def test_store_as_parquet_check_integrity_of_object(s3, transformer):
+    df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
+
+    transformer.store_as_parquet('mock_address', df)
+
+    # Download the parquet file from S3 to a temporary local file
+    with tempfile.NamedTemporaryFile() as temp_file:
+        transformer.s3_client.download_file(
+            transformer.s3_processed_bucket_name, 'mock_address',
+            temp_file.name)
+
+        # Read the parquet file using fastparquet
+        pf = fp.ParquetFile(temp_file.name)
+        retrieved_df = pf.to_pandas()
+
+        assert_frame_equal(df, retrieved_df)
+
+
+def test_store_as_parquet_incorrect_object_passed_as_df(s3, transformer):
+    df = 'not a dataframe'
+
+    with pytest.raises(ValueError, match='ERROR: object not a dataframe'):
+        transformer.store_as_parquet('mock_address', df)
+
+
+def test_store_as_parquet_error_when_file_name_not_string(s3, transformer):
+
+    df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
+
+    with pytest.raises(TypeError, match='ERROR: file_name expects a string'):
+        transformer.store_as_parquet(True, df)
 
 
 def test_transform_currency_returns_correct_data_frame_from_s3(s3, s3_file,
