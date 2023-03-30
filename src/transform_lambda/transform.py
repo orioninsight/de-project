@@ -114,7 +114,7 @@ class Transformer:
     def transform_sales_order(self, df_sales_order):
         # .assign(Courses=df['Courses'], Duration=df['Duration'])
         df = pd.DataFrame()
-        df['sales_record_id'] = df_sales_order.reset_index().index
+        df['sales_record_id'] = df_sales_order.reset_index().index + 1
         df['sales_order_id'] = df_sales_order['sales_order_id']
         df['created_date'] = pd.to_datetime(
             df_sales_order['created_at']).dt.date
@@ -135,8 +135,8 @@ class Transformer:
         df['agreed_delivery_location_id'] = \
             df_sales_order['agreed_delivery_location_id']
         
-        pd.set_option('display.max_colwidth', None)
-        print(df.loc[:10])
+        pd.set_option('display.max_colwidth', 100)
+        print(df.loc[:1].to_string(index=False))
         return df
     
     def store_parquet():
