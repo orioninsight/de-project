@@ -139,6 +139,7 @@ _env.py
 venv/*
 
 *.csv
-!test/transforming_lambda/data/*
+!src/transform_lambda/*
+!test/transform_lambda/data/*
 
 *.zip
