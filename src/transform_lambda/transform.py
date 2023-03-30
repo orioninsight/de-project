@@ -43,9 +43,17 @@ class Transformer:
             return df
         except Exception as e:
             logger.error(f'An error occurred reading csv file: {e}')
-            raise Exception()
+            raise RuntimeError()
 
     def transform_currency(self, df_currency):
+        try:
+            df_currency_info = pd.read_csv('src/transform_lambda/currency.csv')
+        except Exception as e:
+            logger.error(f'Could not read currency.csv: {e}')
+            raise RuntimeError()
+        df_currency = df_currency.join(
+            df_currency_info.set_index('currency_code'),
+            on='currency_code', how='left')
         return df_currency.drop(columns=['created_at', 'last_updated'])
 
     def transform_design(self, df_design):
