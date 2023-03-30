@@ -1,6 +1,7 @@
 import pandas as pd
 import boto3
 import logging
+from fastparquet import write
 
 
 logger = logging.getLogger('MyLogger')
@@ -23,16 +24,20 @@ class Transformer:
                  'payment', 'transaction', 'payment_type',
                  'currency', 'department']
 
-    def __init__(self, bucket_name):
+    def __init__(self, bucket_name, processed_bucket_name):
         self.s3_client = boto3.client('s3')
         self.s3_bucket_name = bucket_name
+        self.s3_processed_bucket_name = processed_bucket_name
 
     def list_csv_files(self):
         ingestion_csv_files = self.s3_client.list_objects_v2(
             Bucket=self.s3_bucket_name)['Contents']
         for file in Transformer.FILE_LIST:
             if file not in [item['Key'] for item in ingestion_csv_files]:
-                raise Exception('Files are not complete')
+                msg = 'ERROR: Files are not complete'
+                logger.error(msg)
+                raise Exception(msg)
+
         return Transformer.FILE_LIST
 
     def read_csv(self, key):
@@ -44,6 +49,35 @@ class Transformer:
         except Exception as e:
             logger.error(f'An error occurred reading csv file: {e}')
             raise RuntimeError()
+
+    def store_as_parquet(self, file_name, df):
+        if not isinstance(df, pd.DataFrame):
+            msg = 'ERROR: object not a dataframe'
+            logger.error(msg)
+            raise ValueError(msg)
+
+        if not type(file_name) == str:
+            msg = 'ERROR: file_name expects a string'
+            logger.error(msg)
+            raise TypeError(msg)
+
+        try:
+            write(f'/tmp/{file_name}.parq', df)
+
+        except Exception as e:
+            msg = f'An error occurred converting dataframe to parquet: {e}'
+            logger.error(msg)
+            raise Exception(msg)
+
+        try:
+            self.s3_client.upload_file(
+                f'/tmp/{file_name}.parq', self.s3_processed_bucket_name,
+                file_name)
+
+        except Exception as e:
+            msg = f'An error occurred writing parquet file to bucket: {e}'
+            logger.error(msg)
+            raise Exception(msg)
 
     def transform_currency(self, df_currency):
         try:
