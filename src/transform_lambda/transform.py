@@ -111,5 +111,14 @@ class Transformer:
         df['quarter'] = df['date'].dt.quarter
         return df.loc[:, df.columns != 'date']
 
+    def transform_staff(self, df_staff, df_department):
+        staff_table = df_staff.drop(
+            columns=['created_at', 'last_updated'])
+        department_table = df_department.drop(
+            columns=['created_at', 'last_updated', 'manager'])
+        merged_table = pd.merge(
+            staff_table, department_table, on='department_id')
+        return merged_table.drop(columns=['department_id'])
+
     def store_parquet():
         pass
