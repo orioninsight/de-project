@@ -108,7 +108,8 @@ def call_transformation_lambda(event, context):
     # }
 
     # response = client.invoke(
-    #     FunctionName='arn:aws:lambda:us-east-1:441836517159:function:transformation-lambda',
+    #     FunctionName='arn:aws:lambda:us-east-1:441836517159:'
+    #     'function:transformation-lambda',
     #     InvocationType='RequestResponse',
     #     Payload=json.dumps(inputParams)
     # )
