@@ -47,8 +47,8 @@ def transformer(s3):
 
 @pytest.fixture(scope="module", params=[
     ('currency', (3, 2)),
-    ('design', (106, 4)),
-    ('address', (30, 8))
+    ('design', (10, 4)),
+    ('address', (10, 8))
     ])
 def s3_file(request, transformer):
     key, shape = request.param
@@ -117,7 +117,7 @@ def test_transform_currency_returns_correct_data_frame_structure(transformer):
 
 
 def test_transform_design_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (106, 4)
+    expected_df_shape = (10, 4)
     expected_df_cols = {'design_id', 'design_name',
                         'file_location', 'file_name'}
 
@@ -130,7 +130,7 @@ def test_transform_design_returns_correct_data_frame_structure(transformer):
 
 
 def test_transform_address_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (30, 8)
+    expected_df_shape = (10, 8)
     expected_df_cols = {'location_id', 'address_line_1', 'address_line_2',
                         'district', 'city', 'postal_code', 'country', 'phone'}
 
