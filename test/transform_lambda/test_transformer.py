@@ -8,7 +8,7 @@ import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
 import tempfile
 import fastparquet as fp
-from src.transforming_lambda.transform import Transformer
+from src.transform_lambda.transform import Transformer
 
 
 bucket_name = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
