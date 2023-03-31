@@ -207,6 +207,7 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
     assert_series_equal(res_df.iloc[0, :], expected_first_row)
 
 
+
 def test_transform_sales_order_returns_correct_data_frame(transformer):
     expected_df_shape = (1518, 15)
     expected_df_cols = {'sales_record_id', 'created_date',
@@ -251,3 +252,18 @@ def test_transform_sales_order_returns_correct_data(transformer):
         f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
     res_df = transformer.transform_sales_order(sales_order_df)
     assert_frame_equal(res_df.iloc[:1], expected_fact_sales)
+
+def test_transform_staff_dept_table_returns_correct_df_structure(transformer):
+    expected_dim_staff_shape = (10, 6)
+    expected_df_cols = {'staff_id', 'first_name', 'last_name',
+                        'department_name', 'location', 'email_address'}
+
+    staff_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/staff.csv', encoding='utf-8')
+    department_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/department.csv', encoding='utf-8')
+
+    res_df = transformer.transform_staff(staff_df, department_df)
+    assert res_df.shape == expected_dim_staff_shape
+    assert set(res_df.columns) == expected_df_cols
+

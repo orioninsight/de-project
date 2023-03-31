@@ -111,6 +111,7 @@ class Transformer:
         df['quarter'] = df['date'].dt.quarter
         return df.loc[:, df.columns != 'date']
 
+
     def transform_sales_order(self, df_sales_order):
         # .assign(Courses=df['Courses'], Duration=df['Duration'])
         df = pd.DataFrame()
@@ -138,6 +139,16 @@ class Transformer:
         pd.set_option('display.max_colwidth', 100)
         # print(df.loc[:0].to_string(index=False))
         return df
+
+    def transform_staff(self, df_staff, df_department):
+        staff_table = df_staff.drop(
+            columns=['created_at', 'last_updated'])
+        department_table = df_department.drop(
+            columns=['created_at', 'last_updated', 'manager'])
+        merged_table = pd.merge(
+            staff_table, department_table, on='department_id')
+        return merged_table.drop(columns=['department_id'])
+
 
     def store_parquet():
         pass
