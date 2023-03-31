@@ -22,6 +22,12 @@ variable "extraction_lambda_handler" {
   default = "extract_db.extract_db_handler"
 }
 
+#lambda handler for transform lambda
+variable "transform_lambda_handler" {
+  type    = string
+  default = "transform.transform_handler"
+}
+
 # email for ingestion zone lambda alerting
 variable "email" {
   type    = string
