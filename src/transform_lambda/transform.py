@@ -111,6 +111,35 @@ class Transformer:
         df['quarter'] = df['date'].dt.quarter
         return df.loc[:, df.columns != 'date']
 
+
+    def transform_sales_order(self, df_sales_order):
+        # .assign(Courses=df['Courses'], Duration=df['Duration'])
+        df = pd.DataFrame()
+        df['sales_record_id'] = df_sales_order.reset_index().index + 1
+        df['sales_order_id'] = df_sales_order['sales_order_id']
+        df['created_date'] = pd.to_datetime(
+            df_sales_order['created_at']).dt.date
+        df['created_time'] = pd.to_datetime(
+            df_sales_order['created_at']).dt.time
+        df['last_updated_date'] = pd.to_datetime(
+            df_sales_order['last_updated']).dt.date
+        df['last_updated_time'] = pd.to_datetime(
+            df_sales_order['last_updated']).dt.time
+        df['sales_staff_id'] = df_sales_order['staff_id']
+        df['counterparty_id'] = df_sales_order['counterparty_id']
+        df['units_sold'] = df_sales_order['units_sold']
+        df['unit_price'] = df_sales_order['unit_price']
+        df['currency_id'] = df_sales_order['currency_id']
+        df['design_id'] = df_sales_order['design_id']
+        df['agreed_payment_date'] = df_sales_order['agreed_payment_date']
+        df['agreed_delivery_date'] = df_sales_order['agreed_delivery_date']
+        df['agreed_delivery_location_id'] = \
+            df_sales_order['agreed_delivery_location_id']
+
+        pd.set_option('display.max_colwidth', 100)
+        # print(df.loc[:0].to_string(index=False))
+        return df
+
     def transform_staff(self, df_staff, df_department):
         staff_table = df_staff.drop(
             columns=['created_at', 'last_updated'])
@@ -119,6 +148,7 @@ class Transformer:
         merged_table = pd.merge(
             staff_table, department_table, on='department_id')
         return merged_table.drop(columns=['department_id'])
+
 
     def store_parquet():
         pass

@@ -207,6 +207,52 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
     assert_series_equal(res_df.iloc[0, :], expected_first_row)
 
 
+
+def test_transform_sales_order_returns_correct_data_frame(transformer):
+    expected_df_shape = (1518, 15)
+    expected_df_cols = {'sales_record_id', 'created_date',
+                        'created_time', 'last_updated_date',
+                        'last_updated_time',
+                        'sales_order_id', 'sales_staff_id',
+                        'counterparty_id', 'units_sold', 'unit_price',
+                        'currency_id', 'design_id', 'agreed_payment_date',
+                        'agreed_delivery_date',
+                        'agreed_delivery_location_id'}
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_sales_order_returns_correct_data(transformer):
+    expected_fact_sales = pd.DataFrame(
+        data={'sales_record_id': [1], 'sales_order_id': [1],
+              'created_date': ['2022-11-03'],
+              'created_time': ['14:20:52.186000'],
+              'last_updated_date': ['2022-11-03'],
+              'last_updated_time': ['14:20:52.186000'],
+              'sales_staff_id': [16], 'counterparty_id': [18],
+              'units_sold': [84754],
+              'unit_price': [2.43], 'currency_id': [3], 'design_id': [9],
+              'agreed_payment_date': ['2022-11-03'],
+              'agreed_delivery_date': ['2022-11-10'],
+              'agreed_delivery_location_id': 4})
+
+    expected_fact_sales['created_date'] = pd.to_datetime(
+        expected_fact_sales['created_date']).dt.date
+    expected_fact_sales['created_time'] = pd.to_datetime(
+        expected_fact_sales['created_time']).dt.time
+    expected_fact_sales['last_updated_date'] = pd.to_datetime(
+        expected_fact_sales['last_updated_date']).dt.date
+    expected_fact_sales['last_updated_time'] = pd.to_datetime(
+        expected_fact_sales['last_updated_time']).dt.time
+
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert_frame_equal(res_df.iloc[:1], expected_fact_sales)
+
 def test_transform_staff_dept_table_returns_correct_df_structure(transformer):
     expected_dim_staff_shape = (10, 6)
     expected_df_cols = {'staff_id', 'first_name', 'last_name',
@@ -220,3 +266,4 @@ def test_transform_staff_dept_table_returns_correct_df_structure(transformer):
     res_df = transformer.transform_staff(staff_df, department_df)
     assert res_df.shape == expected_dim_staff_shape
     assert set(res_df.columns) == expected_df_cols
+
