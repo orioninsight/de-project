@@ -49,7 +49,7 @@ def extract_db_handler(event, context):
         logger.info('Checking state of db...')
         if monitor.has_state_changed():
             extract_db_helper(tables_to_extract)
-            call_transformation_lambda(
+            call_transform_lambda(
                 transform_lambda_info_json['transform_lambda_arn'],
                 event, context)
     except Exception as e:
@@ -100,7 +100,7 @@ def extract_db_helper(tables_to_extract):
             raise Exception(f"Unsupported table '{table}' to extract")
 
 
-def call_transformation_lambda(fnArn, event, context):
+def call_transform_lambda(fnArn, event, context):
     client = boto3.client('lambda')
     inputParams = {}
     response = client.invoke(

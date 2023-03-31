@@ -2,6 +2,7 @@ import pandas as pd
 import boto3
 import logging
 import os
+import json
 from fastparquet import write
 
 
@@ -10,15 +11,44 @@ logger.setLevel(logging.INFO)
 
 
 def transform_handler(event, context):
-    storer_info_json = os.environ.get('OI_STORER_INFO', None)
-    if storer_info_json is None:
-        raise Exception('Could not find env var OI_STORER_INFO')
-    transformer = Transformer()
+    storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
+    processed_info_json = load_env_var('OI_PROCESSED_INFO', ['s3_bucket_name'])
+    # loader_lambda_json = load_env_var('OI_LOADER_LAMBDA_INFO',
+    #  ['loader_lambda_arn'])
+    transformer = Transformer(storer_info_json['s3_bucket_name'],
+                              processed_info_json['s3_bucket_name'])
     files = transformer.list_csv_files()
     for file in files:
         transform_fn = getattr(transformer, f'transform_{file}')
-        transformer.store_parquet(transform_fn(transformer.read_csv(file)))
-    transformer.store_parquet(transformer.create_dim_date())
+        transformer.store_as_parquet(transform_fn(transformer.read_csv(file)))
+    transformer.store_as_parquet(transformer.create_dim_date())
+    # call_loader_lambda(loader_lambda_json, event, context)
+
+
+def call_loader_lambda(fnArn, event, context):
+    client = boto3.client('lambda')
+    inputParams = {}
+    response = client.invoke(
+        FunctionName=fnArn,
+        InvocationType='RequestResponse',
+        Payload=json.dumps(inputParams)
+    )
+    logger.info('Invoking loader lambda...')
+    res = json.load(response['Payload'])
+    logger.info(f'Loader lambda responded with {res}')
+
+
+def load_env_var(env_key, expected_json_keys):
+    try:
+        if env_key in os.environ:
+            env_string = os.environ[env_key]
+        env_json = json.loads(env_string)
+        for key in expected_json_keys:
+            if key not in env_json:
+                raise Exception(f'Missing key in env var ({env_key}): ({key})')
+        return env_json
+    except Exception:
+        raise Exception(f'Error loading JSON for env var ({env_key})')
 
 
 class Transformer:
