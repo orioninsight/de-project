@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from unittest.mock import patch
-from extract_db import (extract_db_handler, extract_db_helper,
+from extract_db import (extract_db_handler, extract_db_helper, load_env_var,
                         VALID_TABLES)
 from extraction.extractor import Extractor
 from extraction.monitor import Monitor
@@ -127,10 +127,25 @@ def test_extraction_calls_transformation_lambda_if_db_changed(
 @patch('extract_db.retrieve_entry', return_value=None)
 def test_extraction_raises_error_if_missing_env_var(mock_retrieve,
                                                     unset_set_env):
-    db_secret_string = os.environ.get(unset_set_env, None)
-    if db_secret_string is not None:
-        del os.environ[unset_set_env]
     with pytest.raises(Exception, match=unset_set_env):
         extract_db_handler({}, None)
-    if db_secret_string is not None:
-        os.environ[unset_set_env] = db_secret_string
+
+
+@patch('extract_db.retrieve_entry',
+       return_value='{"HELLO": "ORION", "WORLD": "INSIGHTS"}')
+def test_load_vars_uses_secret_manager_if_is_secret_set_to_true(mock_retrieve):
+    no_such_env_key = f'''_TEST_{int(datetime.now().timestamp())}'''
+    expected_keys = ['HELLO', 'WORLD']
+
+    res_json = load_env_var(no_such_env_key, expected_keys, True)
+
+    mock_retrieve.assert_called_once_with(no_such_env_key)
+    assert res_json == {"HELLO": "ORION", "WORLD": "INSIGHTS"}
+
+
+def test_load_vars_raises_error_if_env_var_contains_invalid_keys():
+    env_key = f'''_TEST_{int(datetime.now().timestamp())}'''
+    expected_keys = ['HELLO', 'WORLD']
+    os.environ[env_key] = '{"HELL":"ORION", "WOLD":"INSIGHTS"}'
+    with pytest.raises(Exception, match='Error loading JSON for env var'):
+        load_env_var(env_key, expected_keys)

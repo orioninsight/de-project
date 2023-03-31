@@ -37,7 +37,7 @@ def extract_db_handler(event, context):
                              f"in 'extract_table' but got {event} instead"))
         db_secret_json = load_env_var('OI_TOTESYS_DB_INFO',
                                       ['host', 'port', 'user',
-                                       'password', 'database'])
+                                       'password', 'database'], True)
         storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
         transform_lambda_info_json = load_env_var('OI_TRANSFORM_LAMBDA_INFO',
                                                   ['transform_lambda_arn'])
@@ -58,19 +58,6 @@ def extract_db_handler(event, context):
     finally:
         if 'extractor' in globals() and extractor is not None:
             extractor.close()
-
-
-def load_env_var(env_key, expected_json_keys):
-    try:
-        env_string = (os.environ[env_key] if env_key in
-                      os.environ else retrieve_entry(env_key))
-        env_json = json.loads(env_string)
-        for key in expected_json_keys:
-            if key not in env_json:
-                raise Exception(f'Missing key in env var ({env_key}): ({key})')
-        return env_json
-    except Exception:
-        raise Exception(f'Error loading JSON for env var ({env_key})')
 
 
 def extract_db_helper(tables_to_extract):
@@ -124,3 +111,18 @@ def call_transformation_lambda(fnArn, event, context):
     logger.info('Invoking transform lambda...')
     res = json.load(response['Payload'])
     logger.info(f'Tranform lambda responded with {res}')
+
+
+def load_env_var(env_key, expected_json_keys, is_secret=False):
+    try:
+        if env_key in os.environ:
+            env_string = os.environ[env_key]
+        elif is_secret:
+            env_string = retrieve_entry(env_key)
+        env_json = json.loads(env_string)
+        for key in expected_json_keys:
+            if key not in env_json:
+                raise Exception(f'Missing key in env var ({env_key}): ({key})')
+        return env_json
+    except Exception:
+        raise Exception(f'Error loading JSON for env var ({env_key})')
