@@ -72,7 +72,7 @@ def test_raises_exception_given_lambda_payload(info):
         extract_db_handler({'extract_table': 123}, None)
 
 
-@pytest.mark.skip()
+# @pytest.mark.skip()
 @patch('extract_db.call_transformation_lambda')
 def test_extracts_db_table_and_stores_file_in_s3(mock_tf_lambda, s3,
                                                  info,
