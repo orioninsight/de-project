@@ -57,8 +57,8 @@ def transformer(s3):
 
 @pytest.fixture(scope="module", params=[
     ('currency', (3, 3)),
-    ('design', (10, 4)),
-    ('address', (10, 8))
+    ('design', (107, 4)),
+    ('address', (30, 8))
 ])
 def s3_file(request, transformer):
     key, shape = request.param
@@ -170,7 +170,7 @@ def test_transform_currency_returns_correct_data_frame_structure(transformer):
 
 
 def test_transform_design_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (10, 4)
+    expected_df_shape = (107, 4)
     expected_df_cols = {'design_id', 'design_name',
                         'file_location', 'file_name'}
 
@@ -183,7 +183,7 @@ def test_transform_design_returns_correct_data_frame_structure(transformer):
 
 
 def test_transform_address_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (10, 8)
+    expected_df_shape = (30, 8)
     expected_df_cols = {'location_id', 'address_line_1', 'address_line_2',
                         'district', 'city', 'postal_code', 'country', 'phone'}
 
@@ -205,3 +205,86 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
     res_df = transformer.create_dim_date()
     assert expected_dim_date_shape == res_df.shape
     assert_series_equal(res_df.iloc[0, :], expected_first_row)
+
+
+def test_transform_sales_order_returns_correct_data_frame(transformer):
+    expected_df_shape = (1544, 15)
+    expected_df_cols = {'sales_record_id', 'created_date',
+                        'created_time', 'last_updated_date',
+                        'last_updated_time',
+                        'sales_order_id', 'sales_staff_id',
+                        'counterparty_id', 'units_sold', 'unit_price',
+                        'currency_id', 'design_id', 'agreed_payment_date',
+                        'agreed_delivery_date',
+                        'agreed_delivery_location_id'}
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_sales_order_returns_correct_data(transformer):
+    expected_fact_sales = pd.DataFrame(
+        data={'sales_record_id': [1], 'sales_order_id': [1],
+              'created_date': ['2022-11-03'],
+              'created_time': ['14:20:52.186000'],
+              'last_updated_date': ['2022-11-03'],
+              'last_updated_time': ['14:20:52.186000'],
+              'sales_staff_id': [16], 'counterparty_id': [18],
+              'units_sold': [84754],
+              'unit_price': [2.43], 'currency_id': [3], 'design_id': [9],
+              'agreed_payment_date': ['2022-11-03'],
+              'agreed_delivery_date': ['2022-11-10'],
+              'agreed_delivery_location_id': 4})
+
+    expected_fact_sales['created_date'] = pd.to_datetime(
+        expected_fact_sales['created_date']).dt.date
+    expected_fact_sales['created_time'] = pd.to_datetime(
+        expected_fact_sales['created_time']).dt.time
+    expected_fact_sales['last_updated_date'] = pd.to_datetime(
+        expected_fact_sales['last_updated_date']).dt.date
+    expected_fact_sales['last_updated_time'] = pd.to_datetime(
+        expected_fact_sales['last_updated_time']).dt.time
+
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert_frame_equal(res_df.iloc[:1], expected_fact_sales)
+
+
+def test_transform_staff_dept_table_returns_correct_df_structure(transformer):
+    expected_dim_staff_shape = (20, 6)
+    expected_df_cols = {'staff_id', 'first_name', 'last_name',
+                        'department_name', 'location', 'email_address'}
+
+    staff_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/staff.csv', encoding='utf-8')
+    department_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/department.csv', encoding='utf-8')
+
+    res_df = transformer.transform_staff(staff_df, department_df)
+    assert res_df.shape == expected_dim_staff_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_counterparty_returns_correct_df_structure(transformer):
+    expected_dim_counterparty_shape = (20, 9)
+    expected_df_cols = {'counterparty_id',
+                        'counterparty_legal_name',
+                        'counterparty_legal_address_line_1',
+                        'counterparty_legal_address_line_2',
+                        'counterparty_legal_district',
+                        'counterparty_legal_city',
+                        'counterparty_legal_postal_code',
+                        'counterparty_legal_country',
+                        'counterparty_legal_phone_number'}
+
+    counterparty_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/counterparty.csv', encoding='utf-8')
+    address_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/address.csv', encoding='utf-8')
+
+    res_df = transformer.transform_counterparty(counterparty_df, address_df)
+    assert res_df.shape == expected_dim_counterparty_shape
+    assert set(res_df.columns) == expected_df_cols
