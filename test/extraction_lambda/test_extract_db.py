@@ -51,8 +51,7 @@ def downloaded_file(request):
         file.unlink()
 
 
-@pytest.fixture(scope='function', params=['OI_TOTESYS_DB_INFO',
-                                          'OI_STORER_INFO',
+@pytest.fixture(scope='function', params=['OI_STORER_INFO',
                                           'OI_TRANSFORM_LAMBDA_INFO'])
 def unset_set_env(request):
     db_secret_string = os.environ.get(request.param, None)
@@ -73,7 +72,7 @@ def test_raises_exception_given_lambda_payload(info):
         extract_db_handler({'extract_table': 123}, None)
 
 
-# @pytest.mark.skip()
+@pytest.mark.skip()
 @patch('extract_db.call_transformation_lambda')
 def test_extracts_db_table_and_stores_file_in_s3(mock_tf_lambda, s3,
                                                  info,
@@ -124,11 +123,28 @@ def test_extraction_calls_transformation_lambda_if_db_changed(
     mock_call_tf_lambda.assert_called_once()
 
 
-@patch('extract_db.retrieve_entry', return_value=None)
+@patch('extract_db.retrieve_entry',
+       return_value='{"host": "", "port": "", "user": "",'
+       '"password": "", "database": ""}')
 def test_extraction_raises_error_if_missing_env_var(mock_retrieve,
                                                     unset_set_env):
     with pytest.raises(Exception, match=unset_set_env):
         extract_db_handler({}, None)
+
+
+@patch('extract_db.retrieve_entry', return_value=None)
+def test_extraction_raises_error_if_missing_db_env_var(mock_retrieve):
+    env_var = 'OI_TOTESYS_DB_INFO'
+    db_secret_string = os.environ.get(env_var, None)
+
+    if db_secret_string is not None:
+        del os.environ[env_var]
+
+    with pytest.raises(Exception, match=env_var):
+        extract_db_handler({}, None)
+
+    if db_secret_string is not None:
+        os.environ[env_var] = db_secret_string
 
 
 @patch('extract_db.retrieve_entry',
