@@ -10,10 +10,16 @@ data "aws_iam_policy_document" "ingestion_lambda_bucket_access" {
   }
   statement {
 
-    actions = ["s3:PutObject", "s3:ListBucket", "s3:GetObject"]
+    actions = ["s3:PutObject", "s3:GetObject"]
 
     resources = [
-      "${aws_s3_bucket.ingestion_zone_bucket.arn}/*"
+      aws_s3_bucket.ingestion_zone_bucket.arn
+    ]
+  }
+  statement {
+    actions = ["s3:ListBucket"]
+    resources = [
+      aws_s3_bucket.ingestion_zone_bucket.arn
     ]
   }
 }
