@@ -78,8 +78,8 @@ resource "aws_lambda_permission" "allow_ingestion_lambda" {
   source_arn = aws_lambda_function.ingestion_lambda.arn
 }
 
-# creates a mapping between the ingestion_lambda function and the transform_lambda function as an event source
-resource "aws_lambda_event_source_mapping" "ingestion_lambda_mapping" {
-  event_source_arn = aws_lambda_function.ingestion_lambda.arn
-  function_name    = aws_lambda_function.transform_lambda.function_name
-}
+# # creates a mapping between the ingestion_lambda function and the transform_lambda function as an event source
+# resource "aws_lambda_event_source_mapping" "ingestion_lambda_mapping" {
+#   event_source_arn = aws_lambda_function.ingestion_lambda.arn
+#   function_name    = aws_lambda_function.transform_lambda.function_name
+# }
