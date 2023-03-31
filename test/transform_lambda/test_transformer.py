@@ -57,8 +57,8 @@ def transformer(s3):
 
 @pytest.fixture(scope="module", params=[
     ('currency', (3, 3)),
-    ('design', (10, 4)),
-    ('address', (10, 8))
+    ('design', (107, 4)),
+    ('address', (30, 8))
 ])
 def s3_file(request, transformer):
     key, shape = request.param
