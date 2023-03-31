@@ -1,6 +1,9 @@
+# defines a Lambda function with the name transform_lambda.
+# specifies the IAM role to be associated with the Lambda function using the aws_iam_role resource.
+# specifies the runtime environment and source code for the Lambda function.
 resource "aws_lambda_function" "transform_lambda" {
   function_name    = "transform_lambda"
-  role             = aws_iam_role.transformation_lambda_role.arn
+  role             = aws_iam_role.transform_lambda_role.arn
   handler          = var.transform_lambda_handler
   runtime          = "python3.9"
   source_code_hash = filebase64sha256(data.local_file.transform_lambda_archive.filename)
@@ -16,7 +19,8 @@ resource "aws_lambda_function" "transform_lambda" {
   ]
   environment {
     variables = {
-      OI_STORER_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.ingestion_zone_bucket.id}" })
+      OI_STORER_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.ingestion_zone_bucket.id}" }),
+      OI_PROCESSED_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" })
     }
   }
 }
@@ -35,7 +39,7 @@ resource "aws_lambda_function" "ingestion_lambda" {
   s3_key    = aws_s3_object.ingestion_lambda_code.key
 
   depends_on = [
-    aws_s3_object.ingestion_lambda_code
+    aws_s3_object.ingestion_lambda_code, aws_lambda_function.transform_lambda
   ]
   environment {
     variables = {
@@ -45,25 +49,23 @@ resource "aws_lambda_function" "ingestion_lambda" {
   }
 }
 
-# defines a Lambda function with the name transform_lambda.
-# specifies the IAM role to be associated with the Lambda function using the aws_iam_role resource.
-# specifies the runtime environment and source code for the Lambda function.
-resource "aws_lambda_function" "transform_lambda" {
-  function_name    = "transform_lambda"
-  role             = aws_iam_role.transform_lambda_role.arn
-  handler          = var.transform_lambda_handler
-  runtime          = "python3.9"
-  source_code_hash = filebase64sha256(data.local_file.transform_lambda_archive.filename)
-  timeout          = 30
-  memory_size      = 192
 
-  s3_bucket = aws_s3_bucket.code_bucket.bucket
-  s3_key    = aws_s3_object.transform_lambda_code.key
+# resource "aws_lambda_function" "transform_lambda" {
+#   function_name    = "transform_lambda"
+#   role             = aws_iam_role.transform_lambda_role.arn
+#   handler          = var.transform_lambda_handler
+#   runtime          = "python3.9"
+#   source_code_hash = filebase64sha256(data.local_file.transform_lambda_archive.filename)
+#   timeout          = 30
+#   memory_size      = 192
 
-  depends_on = [
-    aws_s3_object.transform_lambda_code
-  ]
-}
+#   s3_bucket = aws_s3_bucket.code_bucket.bucket
+#   s3_key    = aws_s3_object.transform_lambda_code.key
+
+#   depends_on = [
+#     aws_s3_object.transform_lambda_code
+#   ]
+# }
 
 # defines a CloudWatch event rule which runs every minute
 resource "aws_cloudwatch_event_rule" "scheduler" {

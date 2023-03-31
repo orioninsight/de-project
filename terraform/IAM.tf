@@ -61,6 +61,24 @@ resource "aws_iam_policy" "ingestion_lamba_secretsmanager_policy" {
   policy      = data.aws_iam_policy_document.ingestion_lambda_secretsmanager_document.json
 }
 
+#creates policy locally to allow ingestion_lambda lambda to call transform_lambda
+data "aws_iam_policy_document" "ingestion_lambda_call_transform_document" {
+  statement {
+
+    actions = ["lambda:InvokeFunction"]
+
+    resources = [
+      "${aws_lambda_function.transform_lambda.arn}/*"
+    ]
+  }
+}
+
+# creates above policy in IAM
+resource "aws_iam_policy" "ingestion_lamba_call_transform_policy" {
+  name_prefix = "call-transform-policy-extraction-lambda-"
+  policy      = data.aws_iam_policy_document.ingestion_lambda_call_transform_document.json
+}
+
 # creates lambda role 
 resource "aws_iam_role" "ingestion_lambda_role" {
   name_prefix        = "role-extraction-lambda-"
@@ -100,6 +118,10 @@ resource "aws_iam_role_policy_attachment" "ingestion_lambda_secretsmanager_polic
   policy_arn = aws_iam_policy.ingestion_lamba_secretsmanager_policy.arn
 }
 
+resource "aws_iam_role_policy_attachment" "ingestion_lambda_call_transform_policy_attachment" {
+  role       = aws_iam_role.ingestion_lambda_role.name
+  policy_arn = aws_iam_policy.ingestion_lamba_call_transform_policy.arn
+}
 ### trasformation_lambda ###
 
 #creates policy document locally for transform_lambda to access required S3 resources
@@ -153,6 +175,8 @@ resource "aws_iam_policy" "transform_lamba_cw_policy" {
   name_prefix = "cw-policy-transform-lambda-"
   policy      = data.aws_iam_policy_document.transform_lambda_cw_document.json
 }
+
+
 
 # creates transform-lambda role 
 resource "aws_iam_role" "transform_lambda_role" {
