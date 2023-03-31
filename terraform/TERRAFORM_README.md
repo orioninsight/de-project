@@ -11,9 +11,9 @@
    chmod u+x backend.sh
    ```
 
-5. Run backend.sh and note created bucket from output.
+5. Run backend.sh which will generate a backend.tf file with the first existing bucket with prefix 'nc-terraform-state-' or generate a new one
    
-6. In backend.tf change bucket to equal the name of your bucket created by backend.sh e.g.
+6. You can verify this in backend.tf and change the bucket name if needed e.g.
     ```
     terraform {
     backend "s3" {

@@ -18,6 +18,6 @@ if [[ -z "$TERRAFORM_S3_BUCKET_NAME" ]]; then
 fi
 
 eval "cat <<EOF
-$(<backend_template.tf)
+$(<backend.tf.template)
 EOF
 " > backend.tf 2> /dev/null

@@ -12,15 +12,15 @@ note zip is a dependency to make lambda deployment packages
    sudo apt install zip -y
 ```
 
-Add a secret with ID **totesys_db** to AWS Secrets Manager in the following format, **replacing values**:
+Add a secret with ID **OI_TOTESYS_DB_INFO** to AWS Secrets Manager in the following format, **replacing values**:
 ```
     {"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}
 ```
 
-If only testing locally (not deploying via terraform), export variable **OI_TOTESYS_SECRET_STRING** to provide database credentials in the following format to enable unit tests to run, **replacing values**:
+If only testing locally (not deploying via terraform), export variable **OI_TOTESYS_DB_INFO** to provide database credentials in the following format to enable unit tests to run, **replacing values**:
     
 ```bash
-    export OI_TOTESYS_SECRET_STRING='{"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}'
+    export OI_TOTESYS_DB_INFO='{"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}'
 ```
 
 

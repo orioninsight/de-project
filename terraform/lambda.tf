@@ -1,9 +1,25 @@
+resource "aws_lambda_function" "transform_lambda" {
+  function_name    = "transform_lambda"
+  role             = aws_iam_role.transformation_lambda_role.arn
+  handler          = var.transform_lambda_handler
+  runtime          = "python3.9"
+  source_code_hash = filebase64sha256(data.local_file.transform_lambda_archive.filename)
+  timeout          = 30
+  memory_size      = 192
 
-# defines a Lambda function with the name ingestion_lambda
-# specifies the IAM role to be associated with the Lambda function using the aws_iam_role resource
-# specifies the runtime environment and source code for the Lambda function
-# defines a trigger for the Lambda function using a cloudwatch_event trigger that is triggered when the Lambda function completes successfully
-# specifies an environment variable for the Lambda function
+  // Here's where we specify the code location
+  s3_bucket = aws_s3_bucket.code_bucket.bucket
+  s3_key    = aws_s3_object.transform_lambda_code.key
+
+  depends_on = [
+    aws_s3_object.transform_lambda_code
+  ]
+  environment {
+    variables = {
+      OI_STORER_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.ingestion_zone_bucket.id}" })
+    }
+  }
+}
 
 resource "aws_lambda_function" "ingestion_lambda" {
   function_name    = "extraction_lambda"
@@ -24,6 +40,7 @@ resource "aws_lambda_function" "ingestion_lambda" {
   environment {
     variables = {
       OI_STORER_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.ingestion_zone_bucket.id}" })
+      OI_TRANSFORM_LAMBDA_INFO = jsonencode({ "transform_lambda_arn" : "${aws_lambda_function.transform_lambda.arn}" })
     }
   }
 }

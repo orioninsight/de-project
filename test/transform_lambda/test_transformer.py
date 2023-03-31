@@ -11,14 +11,13 @@ import fastparquet as fp
 from src.transform_lambda.transform import Transformer
 
 
-bucket_name = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
-processed_bucket_name =\
+BUCKET_NAME = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
+PROCESS_BUCKET_NAME =\
     f'test-processed-bucket-{int(datetime.now().timestamp())}'
-# TEST_DATA_PATH = 'test/transforming_lambda/data'
-# get dynamic data path
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 TEST_DATA_PATH = f'{script_dir}/data'
+TEST_DATA_PATH = 'test/transform_lambda/data'
 
 
 @pytest.fixture(scope="module")
@@ -29,8 +28,8 @@ def aws_credentials():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-    os.environ['OI_STORER_SECRET_STRING'] = json.dumps(
-        {'s3_bucket_name': bucket_name})
+    os.environ['OI_STORER_INFO'] = json.dumps(
+        {'s3_BUCKET_NAME': BUCKET_NAME})
 
 
 @pytest.fixture(scope="module")
@@ -41,18 +40,18 @@ def s3(aws_credentials):
                      'payment', 'transaction', 'payment_type',
                      'currency', 'department']
         s3_client = boto3.client("s3")
-        s3_client.create_bucket(Bucket=bucket_name)
-        s3_client.create_bucket(Bucket=processed_bucket_name)
+        s3_client.create_bucket(Bucket=BUCKET_NAME)
+        s3_client.create_bucket(Bucket=PROCESS_BUCKET_NAME)
         for file_name in file_list:
             with open(f'{TEST_DATA_PATH}/{file_name}.csv', 'rb') as f:
-                s3_client.put_object(Bucket=bucket_name,
+                s3_client.put_object(Bucket=BUCKET_NAME,
                                      Key=f'{file_name}', Body=f)
         yield s3_client
 
 
 @pytest.fixture(scope='module')
 def transformer(s3):
-    return Transformer(bucket_name, processed_bucket_name)
+    return Transformer(BUCKET_NAME, PROCESS_BUCKET_NAME)
 
 
 @pytest.fixture(scope="module", params=[
@@ -69,9 +68,9 @@ def s3_file(request, transformer):
 @pytest.fixture(scope='function')
 def s3_deleter(s3):
     file_name = Transformer.FILE_LIST[0]
-    s3.delete_object(Bucket=bucket_name, Key=file_name)
+    s3.delete_object(Bucket=BUCKET_NAME, Key=file_name)
     yield file_name
-    s3.put_object(Bucket=bucket_name,
+    s3.put_object(Bucket=BUCKET_NAME,
                   Key=f'{file_name}',
                   Body=open(f'{TEST_DATA_PATH}/{file_name}.csv', 'rb'))
 
@@ -94,7 +93,7 @@ def test_read_csv_returns_data_frame(s3, transformer):
                   1,2,3,4
                     '''
     for file_name in Transformer.FILE_LIST:
-        s3.put_object(Bucket=bucket_name,
+        s3.put_object(Bucket=BUCKET_NAME,
                       Key=f'{file_name}_test',
                       Body=csv_data.encode('utf-8'))
     result = transformer.read_csv('department_test')
@@ -105,12 +104,17 @@ def test_read_csv_returns_data_frame(s3, transformer):
     assert_frame_equal(result, expected_df)
 
 
+def test_read_csv_raises_error(s3, transformer):
+    with pytest.raises(Exception):
+        transformer.read_csv('NO_SUCH_CSV_FILE')
+
+
 def test_store_as_parquet_object_is_stored_bucket(s3, transformer):
     df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
 
     transformer.store_as_parquet('mock_address', df)
     retrieved_parquet_metadata = transformer.s3_client.head_object(
-        Bucket=processed_bucket_name, Key='mock_address')
+        Bucket=PROCESS_BUCKET_NAME, Key='mock_address')
 
     assert retrieved_parquet_metadata is not None
 
@@ -167,6 +171,11 @@ def test_transform_currency_returns_correct_data_frame_structure(transformer):
     res_df = transformer.transform_currency(currency_df)
     assert res_df.shape == expected_df_shape
     assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_currency_raises_error_given_no_csv_file(transformer):
+    with pytest.raises(Exception):
+        pd.read_csv('NO_SUCH_FILE.csv', encoding='utf-8')
 
 
 def test_transform_design_returns_correct_data_frame_structure(transformer):

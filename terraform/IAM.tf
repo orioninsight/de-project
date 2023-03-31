@@ -100,7 +100,7 @@ resource "aws_iam_role_policy_attachment" "ingestion_lambda_secretsmanager_polic
   policy_arn = aws_iam_policy.ingestion_lamba_secretsmanager_policy.arn
 }
 
-# trasformation_lambda
+### trasformation_lambda ###
 
 #creates policy document locally for transform_lambda to access required S3 resources
 data "aws_iam_policy_document" "transform_lambda_bucket_access" {
