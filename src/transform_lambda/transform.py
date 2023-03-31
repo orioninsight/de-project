@@ -136,7 +136,7 @@ class Transformer:
             df_sales_order['agreed_delivery_location_id']
         
         pd.set_option('display.max_colwidth', 100)
-        print(df.loc[:1].to_string(index=False))
+        #print(df.loc[:0].to_string(index=False))
         return df
     
     def store_parquet():

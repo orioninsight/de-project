@@ -230,8 +230,12 @@ def test_transform_sales_order_returns_correct_data(transformer):
      'agreed_payment_date':['2022-11-03'], 'agreed_delivery_date': ['2022-11-10'],
       'agreed_delivery_location_id': 4})
 
+    expected_fact_sales['created_date'] = pd.to_datetime(expected_fact_sales['created_date']).dt.date
+    expected_fact_sales['created_time'] = pd.to_datetime(expected_fact_sales['created_time']).dt.time
+    expected_fact_sales['last_updated_date'] = pd.to_datetime(expected_fact_sales['last_updated_date']).dt.date
+    expected_fact_sales['last_updated_time'] = pd.to_datetime(expected_fact_sales['last_updated_time']).dt.time
+   
     sales_order_df = pd.read_csv(
         f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
     res_df = transformer.transform_sales_order(sales_order_df)
-
     assert_frame_equal(res_df.iloc[:1], expected_fact_sales)
