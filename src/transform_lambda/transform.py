@@ -147,5 +147,53 @@ class Transformer:
             staff_table, department_table, on='department_id')
         return merged_table.drop(columns=['department_id'])
 
+    def transform_counterparty(self, df_counterparty, df_address):
+
+        try:
+            # drop counterparty columns
+            counterparty_table = df_counterparty.drop(
+                columns=['commercial_contact', 'delivery_contact',
+                         'created_at', 'last_updated'])
+
+            # drop address table
+            address_table = df_address.drop(
+                columns=['created_at', 'last_updated']
+            )
+
+        except Exception as e:
+            msg = f'An error occurred dropping columns: {e}'
+            logger.error(msg)
+            raise Exception(msg)
+
+        try:
+            # rename address columns - mistake on star schema for address2
+            address_table = address_table.rename(
+                columns={'address_line_1': 'counterparty_legal_address_line_1',
+                         'address_line_2': 'counterparty_legal_address_line_2',
+                         'district': 'counterparty_legal_district',
+                         'city': 'counterparty_legal_city',
+                         'postal_code': 'counterparty_legal_postal_code',
+                         'country': 'counterparty_legal_country',
+                         'phone': 'counterparty_legal_phone_number',
+                         'address_id': 'legal_address_id'})
+
+        except Exception as e:
+            msg = f'An error occurred renaming columns: {e}'
+            logger.error(msg)
+            raise Exception(msg)
+
+        try:
+            # merge tables
+            merged_table = pd.merge(
+                counterparty_table, address_table, on='legal_address_id')
+
+            # drop column and return
+            return merged_table.drop(columns=['legal_address_id'])
+
+        except Exception as e:
+            msg = f'An error occurred merging tables: {e}'
+            logger.error(msg)
+            raise Exception(msg)
+
     def store_parquet():
         pass
