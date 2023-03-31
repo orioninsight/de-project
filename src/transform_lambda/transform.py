@@ -110,7 +110,7 @@ class Transformer:
         df['month_name'] = df['date'].dt.strftime("%B")
         df['quarter'] = df['date'].dt.quarter
         return df.loc[:, df.columns != 'date']
-    
+
     def transform_sales_order(self, df_sales_order):
         # .assign(Courses=df['Courses'], Duration=df['Duration'])
         df = pd.DataFrame()
@@ -134,10 +134,10 @@ class Transformer:
         df['agreed_delivery_date'] = df_sales_order['agreed_delivery_date']
         df['agreed_delivery_location_id'] = \
             df_sales_order['agreed_delivery_location_id']
-        
+
         pd.set_option('display.max_colwidth', 100)
-        #print(df.loc[:0].to_string(index=False))
+        # print(df.loc[:0].to_string(index=False))
         return df
-    
+
     def store_parquet():
         pass
