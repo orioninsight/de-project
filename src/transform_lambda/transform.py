@@ -111,9 +111,7 @@ class Transformer:
         df['quarter'] = df['date'].dt.quarter
         return df.loc[:, df.columns != 'date']
 
-
     def transform_sales_order(self, df_sales_order):
-        # .assign(Courses=df['Courses'], Duration=df['Duration'])
         df = pd.DataFrame()
         df['sales_record_id'] = df_sales_order.reset_index().index + 1
         df['sales_order_id'] = df_sales_order['sales_order_id']
@@ -148,7 +146,6 @@ class Transformer:
         merged_table = pd.merge(
             staff_table, department_table, on='department_id')
         return merged_table.drop(columns=['department_id'])
-
 
     def store_parquet():
         pass
