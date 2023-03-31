@@ -30,6 +30,7 @@ class Monitor:
                     self.save_state()
                     return True
             logger.info("State hasn't changed")
+            self.save_state()
             return False
         elif res == -1:
             logger.info("No DB state file found")
@@ -54,8 +55,7 @@ class Monitor:
             logger.info("State saved to S3")
         except Exception as e:
             logger.error(e)
-            return False
-        return True
+            raise e
 
     def get_current_state(self):
         try:
@@ -66,13 +66,16 @@ class Monitor:
                 if not (stat_key in stats
                         and type(stats[stat_key]) is int):
                     raise Exception("S3 object db_state has missing/invalid"
-                                    f' JSON entry: ({stat_key}:{stats[stat_key]})')
+                                    f' JSON entry: ({stat_key})')
             self.current_state = stats
             return 1
         except ClientError as e:
             if e.response['Error']['Code'] == 'NoSuchKey':
-                logger.error(e)
+                logger.info('db_state key not found')
                 return -1
+            else:
+                logger.error(e)
+                raise e
         except Exception as e:
             logger.error(e)
-            return 0
+            raise e

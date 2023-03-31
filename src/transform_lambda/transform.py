@@ -1,6 +1,7 @@
 import pandas as pd
 import boto3
 import logging
+import os
 from fastparquet import write
 
 
@@ -8,7 +9,10 @@ logger = logging.getLogger('MyLogger')
 logger.setLevel(logging.INFO)
 
 
-def transform_lambda_handler(event, context):
+def transform_handler(event, context):
+    storer_info_json = os.environ.get('OI_STORER_INFO', None)
+    if storer_info_json is None:
+        raise Exception('Could not find env var OI_STORER_INFO')
     transformer = Transformer()
     files = transformer.list_csv_files()
     for file in files:
@@ -48,7 +52,7 @@ class Transformer:
             return df
         except Exception as e:
             logger.error(f'An error occurred reading csv file: {e}')
-            raise RuntimeError()
+            raise RuntimeError(e)
 
     def store_as_parquet(self, file_name, df):
         if not isinstance(df, pd.DataFrame):
@@ -84,7 +88,7 @@ class Transformer:
             df_currency_info = pd.read_csv('src/transform_lambda/currency.csv')
         except Exception as e:
             logger.error(f'Could not read currency.csv: {e}')
-            raise RuntimeError()
+            raise RuntimeError(e)
         df_currency = df_currency.join(
             df_currency_info.set_index('currency_code'),
             on='currency_code', how='left')
