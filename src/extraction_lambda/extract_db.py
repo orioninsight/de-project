@@ -44,7 +44,6 @@ def extract_db_handler(event, context):
         extractor = Extractor(**db_secret_json)
         saver = Saver()
         storer = Storer(**storer_info_json)
-        logger.info(storer_info_json["s3_bucket_name"])
         monitor = Monitor(storer_info_json["s3_bucket_name"], extractor)
         logger.info('Checking state of db...')
         if monitor.has_state_changed():

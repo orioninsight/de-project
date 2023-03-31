@@ -1,0 +1,101 @@
+import json
+from pathlib import Path
+import pytest
+from moto import mock_s3
+import os
+import boto3
+from unittest.mock import patch
+from src.extraction_lambda.extract_db import extract_db_handler
+from src.transform_lambda.transform import transform_handler
+import fastparquet as fp
+
+
+INGESTION_BUCKET_NAME = "test-ingestion-bucket"
+PROCESSED_BUCKET_NAME = "test-processed-bucket"
+
+
+@pytest.fixture(scope="function")
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+    os.environ["AWS_SECURITY_TOKEN"] = "testing"
+    os.environ["AWS_SESSION_TOKEN"] = "testing"
+    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+
+
+@pytest.fixture(scope="function")
+def s3(aws_credentials):
+    with mock_s3():
+        s3_client = boto3.client("s3")
+        s3_client.create_bucket(Bucket=INGESTION_BUCKET_NAME)
+        s3_client.create_bucket(Bucket=PROCESSED_BUCKET_NAME)
+        yield s3_client
+
+
+# @pytest.fixture(scope="function")
+# def s3():
+#     s3_client = boto3.client("s3")
+#     bucket_list = [INGESTION_BUCKET_NAME, PROCESSED_BUCKET_NAME]
+#     for bucket in bucket_list:
+#         s3_client.create_bucket(Bucket=bucket)
+#     yield s3_client
+#     for bucket in bucket_list:
+#         objs = s3_client.list_objects_v2(Bucket=bucket)['Contents']
+#         for obj in objs:
+#             s3_client.delete_object(Bucket=bucket, Key=obj['Key'])
+#         s3_client.delete_bucket(Bucket=bucket)
+
+
+@pytest.fixture(
+    scope='function', params=[
+        ('currency', {'currency_code', 'currency_id', 'currency_name'}),
+        ('design', {'design_id', 'design_name',
+                    'file_location', 'file_name'}),
+        ('staff', {'staff_id', 'first_name', 'last_name',
+                   'department_name', 'location', 'email_address'}),
+        ('counterparty', {'counterparty_id',
+                          'counterparty_legal_name',
+                          'counterparty_legal_address_line_1',
+                          'counterparty_legal_address_line_2',
+                          'counterparty_legal_district',
+                          'counterparty_legal_city',
+                          'counterparty_legal_postal_code',
+                          'counterparty_legal_country',
+                          'counterparty_legal_phone_number'}),
+        ('date', {'date_id', 'year', 'month', 'day', 'day_of_week',
+                  'day_name', 'month_name', 'quarter'})
+    ])
+def parquet_file(request):
+    file_name, cols = request.param
+    yield request.param
+    file = Path(f'{file_name}.parq')
+    if file.is_file():
+        file.unlink()
+
+
+@pytest.fixture(scope='function')
+def env_vars():
+    os.environ['OI_STORER_INFO'] = json.dumps(
+        {'s3_bucket_name': INGESTION_BUCKET_NAME})
+    os.environ['OI_TRANSFORM_LAMBDA_INFO'] = json.dumps(
+        {'transform_lambda_arn': 'AN ARN'})
+    os.environ['OI_PROCESSED_INFO'] = json.dumps(
+        {'s3_bucket_name': PROCESSED_BUCKET_NAME})
+
+
+@patch('src.extraction_lambda.extract_db.call_transform_lambda',
+       return_value=None)
+def test_currency_data_flows_from_extraction_to_transform(
+        mock_tf_lambda, s3, env_vars, parquet_file):
+    file, expected_df_cols = parquet_file
+
+    extract_db_handler({}, None)
+    transform_handler({}, None)
+
+    s3.download_file(
+            PROCESSED_BUCKET_NAME, file, f'{file}.parq')
+    pf = fp.ParquetFile(f'{file}.parq')
+    res_df = pf.to_pandas()
+
+    assert set(res_df.columns) == expected_df_cols

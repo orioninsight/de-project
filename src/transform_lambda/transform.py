@@ -17,11 +17,24 @@ def transform_handler(event, context):
     #  ['loader_lambda_arn'])
     transformer = Transformer(storer_info_json['s3_bucket_name'],
                               processed_info_json['s3_bucket_name'])
-    files = transformer.list_csv_files()
-    for file in files:
-        transform_fn = getattr(transformer, f'transform_{file}')
-        transformer.store_as_parquet(transform_fn(transformer.read_csv(file)))
-    transformer.store_as_parquet(transformer.create_dim_date())
+    transformer.list_csv_files()
+    df_address = transformer.read_csv('address')
+    df_department = transformer.read_csv('department')
+    transformer.store_as_parquet(
+        'currency',
+        transformer.transform_currency(transformer.read_csv('currency')))
+    transformer.store_as_parquet(
+        'design', transformer.transform_design(transformer.read_csv('design')))
+    transformer.store_as_parquet(
+        'staff', transformer.transform_staff(
+            transformer.read_csv('staff'), df_department))
+    transformer.store_as_parquet(
+        'counterparty', transformer.transform_counterparty(
+            transformer.read_csv('counterparty'), df_address))
+    transformer.store_as_parquet('date', transformer.create_dim_date())
+    # transformer.store_as_parquet(
+    #     'sales_order', transformer.transform_sales_order(
+    #         transformer.read_csv('sales_order')))
     # call_loader_lambda(loader_lambda_json, event, context)
 
 
@@ -228,6 +241,3 @@ class Transformer:
             msg = f'An error occurred merging tables: {e}'
             logger.error(msg)
             raise Exception(msg)
-
-    def store_parquet():
-        pass
