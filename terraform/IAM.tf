@@ -68,7 +68,7 @@ data "aws_iam_policy_document" "ingestion_lambda_call_transform_document" {
     actions = ["lambda:InvokeFunction"]
 
     resources = [
-      "${aws_lambda_function.transform_lambda.arn}/*"
+      aws_lambda_function.transform_lambda.arn
     ]
   }
 }
