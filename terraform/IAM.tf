@@ -102,14 +102,14 @@ resource "aws_iam_role_policy_attachment" "ingestion_lambda_secretsmanager_polic
 
 # trasformation_lambda
 
-#creates policy document locally for transformation_lambda to access required S3 resources
-data "aws_iam_policy_document" "transformation_lambda_bucket_access" {
+#creates policy document locally for transform_lambda to access required S3 resources
+data "aws_iam_policy_document" "transform_lambda_bucket_access" {
   statement {
 
     actions = ["s3:GetObject"]
 
     resources = [
-      "${aws_s3_bucket.code_bucket.arn}/transformation_lambda/*"
+      "${aws_s3_bucket.code_bucket.arn}/transform_lambda/*"
     ]
   }
   statement {
@@ -131,32 +131,32 @@ data "aws_iam_policy_document" "transformation_lambda_bucket_access" {
 }
 
 #creates above policy in IAM
-resource "aws_iam_policy" "transformation_lambda_bucket_access" {
-  name_prefix = "s3-access-policy-transformation-lambda-"
-  policy      = data.aws_iam_policy_document.transformation_lambda_bucket_access.json
+resource "aws_iam_policy" "transform_lambda_bucket_access" {
+  name_prefix = "s3-access-policy-transform-lambda-"
+  policy      = data.aws_iam_policy_document.transform_lambda_bucket_access.json
 }
 
-#creates policy locally to allow transformation_lambda lambda to utilise log group
-data "aws_iam_policy_document" "transformation_lambda_cw_document" {
+#creates policy locally to allow transform_lambda lambda to utilise log group
+data "aws_iam_policy_document" "transform_lambda_cw_document" {
   statement {
 
     actions = ["logs:CreateLogStream", "logs:PutLogEvents"]
 
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${resource.aws_cloudwatch_log_group.transformation_lambda_log.name}:*"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:log-group:${resource.aws_cloudwatch_log_group.transform_lambda_log.name}:*"
     ]
   }
 }
 
 # creates above policy in IAM
-resource "aws_iam_policy" "transformation_lamba_cw_policy" {
-  name_prefix = "cw-policy-transformation-lambda-"
-  policy      = data.aws_iam_policy_document.transformation_lambda_cw_document.json
+resource "aws_iam_policy" "transform_lamba_cw_policy" {
+  name_prefix = "cw-policy-transform-lambda-"
+  policy      = data.aws_iam_policy_document.transform_lambda_cw_document.json
 }
 
-# creates transformation-lambda role 
-resource "aws_iam_role" "transformation_lambda_role" {
-  name_prefix        = "role-transformation-lambda-"
+# creates transform-lambda role 
+resource "aws_iam_role" "transform_lambda_role" {
+  name_prefix        = "role-transform-lambda-"
   assume_role_policy = <<EOF
     {
         "Version": "2012-10-17",
@@ -177,13 +177,13 @@ resource "aws_iam_role" "transformation_lambda_role" {
     EOF
 }
 
-# attach IAM policy to transformation-lambda role 
-resource "aws_iam_role_policy_attachment" "transformation_lambda_s3_policy_attachment" {
-  role       = aws_iam_role.transformation_lambda_role.name
-  policy_arn = aws_iam_policy.transformation_lambda_bucket_access.arn
+# attach IAM policy to transform-lambda role 
+resource "aws_iam_role_policy_attachment" "transform_lambda_s3_policy_attachment" {
+  role       = aws_iam_role.transform_lambda_role.name
+  policy_arn = aws_iam_policy.transform_lambda_bucket_access.arn
 }
 
-resource "aws_iam_role_policy_attachment" "transformation_lambda_cw_policy_attachment" {
-  role       = aws_iam_role.transformation_lambda_role.name
-  policy_arn = aws_iam_policy.transformation_lamba_cw_policy.arn
+resource "aws_iam_role_policy_attachment" "transform_lambda_cw_policy_attachment" {
+  role       = aws_iam_role.transform_lambda_role.name
+  policy_arn = aws_iam_policy.transform_lamba_cw_policy.arn
 }

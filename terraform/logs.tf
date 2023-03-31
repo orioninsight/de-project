@@ -6,8 +6,8 @@ resource "aws_cloudwatch_log_group" "ingestion_lambda_log" {
   }
 }
 
-resource "aws_cloudwatch_log_group" "transformation_lambda_log" {
-  name = "/aws/lambda/transformation_lambda"
+resource "aws_cloudwatch_log_group" "transform_lambda_log" {
+  name = "/aws/lambda/transform_lambda"
 
   tags = {
     Application = "totes"

@@ -20,5 +20,14 @@ resource "aws_s3_object" "ingestion_lambda_code" {
   ]
 }
 
+resource "aws_s3_object" "transform_lambda_code" {
+  key         = "transform_lambda/transform_lambda.zip"
+  source      = data.local_file.transform_lambda_archive.filename
+  bucket      = aws_s3_bucket.code_bucket.bucket
+  source_hash = filebase64sha256(data.local_file.transform_lambda_archive.filename)
+  depends_on = [
+    data.local_file.transform_lambda_archive
+  ]
+}
 
 
