@@ -6,9 +6,17 @@ import json
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
+import tempfile
+import fastparquet as fp
 from src.transform_lambda.transform import Transformer
 
+
 BUCKET_NAME = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
+PROCESS_BUCKET_NAME =\
+    f'test-processed-bucket-{int(datetime.now().timestamp())}'
+script_path = os.path.abspath(__file__)
+script_dir = os.path.dirname(script_path)
+TEST_DATA_PATH = f'{script_dir}/data'
 TEST_DATA_PATH = 'test/transform_lambda/data'
 
 
@@ -33,6 +41,7 @@ def s3(aws_credentials):
                      'currency', 'department']
         s3_client = boto3.client("s3")
         s3_client.create_bucket(Bucket=BUCKET_NAME)
+        s3_client.create_bucket(Bucket=PROCESS_BUCKET_NAME)
         for file_name in file_list:
             with open(f'{TEST_DATA_PATH}/{file_name}.csv', 'rb') as f:
                 s3_client.put_object(Bucket=BUCKET_NAME,
@@ -42,14 +51,14 @@ def s3(aws_credentials):
 
 @pytest.fixture(scope='module')
 def transformer(s3):
-    return Transformer(BUCKET_NAME)
+    return Transformer(BUCKET_NAME, PROCESS_BUCKET_NAME)
 
 
 @pytest.fixture(scope="module", params=[
     ('currency', (3, 3)),
     ('design', (10, 4)),
     ('address', (10, 8))
-    ])
+])
 def s3_file(request, transformer):
     key, shape = request.param
     s3_file_df = transformer.read_csv(key)
@@ -98,6 +107,49 @@ def test_read_csv_returns_data_frame(s3, transformer):
 def test_read_csv_raises_error(s3, transformer):
     with pytest.raises(Exception):
         transformer.read_csv('NO_SUCH_CSV_FILE')
+
+
+def test_store_as_parquet_object_is_stored_bucket(s3, transformer):
+    df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
+
+    transformer.store_as_parquet('mock_address', df)
+    retrieved_parquet_metadata = transformer.s3_client.head_object(
+        Bucket=PROCESS_BUCKET_NAME, Key='mock_address')
+
+    assert retrieved_parquet_metadata is not None
+
+
+def test_store_as_parquet_check_integrity_of_object(s3, transformer):
+    df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
+
+    transformer.store_as_parquet('mock_address', df)
+
+    # Download the parquet file from S3 to a temporary local file
+    with tempfile.NamedTemporaryFile() as temp_file:
+        transformer.s3_client.download_file(
+            transformer.s3_processed_bucket_name, 'mock_address',
+            temp_file.name)
+
+        # Read the parquet file using fastparquet
+        pf = fp.ParquetFile(temp_file.name)
+        retrieved_df = pf.to_pandas()
+
+        assert_frame_equal(df, retrieved_df)
+
+
+def test_store_as_parquet_incorrect_object_passed_as_df(s3, transformer):
+    df = 'not a dataframe'
+
+    with pytest.raises(ValueError, match='ERROR: object not a dataframe'):
+        transformer.store_as_parquet('mock_address', df)
+
+
+def test_store_as_parquet_error_when_file_name_not_string(s3, transformer):
+
+    df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
+
+    with pytest.raises(TypeError, match='ERROR: file_name expects a string'):
+        transformer.store_as_parquet(True, df)
 
 
 def test_transform_currency_returns_correct_data_frame_from_s3(s3, s3_file,
@@ -162,3 +214,64 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
     res_df = transformer.create_dim_date()
     assert expected_dim_date_shape == res_df.shape
     assert_series_equal(res_df.iloc[0, :], expected_first_row)
+
+
+def test_transform_sales_order_returns_correct_data_frame(transformer):
+    expected_df_shape = (1518, 15)
+    expected_df_cols = {'sales_record_id', 'created_date',
+                        'created_time', 'last_updated_date',
+                        'last_updated_time',
+                        'sales_order_id', 'sales_staff_id',
+                        'counterparty_id', 'units_sold', 'unit_price',
+                        'currency_id', 'design_id', 'agreed_payment_date',
+                        'agreed_delivery_date',
+                        'agreed_delivery_location_id'}
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_sales_order_returns_correct_data(transformer):
+    expected_fact_sales = pd.DataFrame(
+        data={'sales_record_id': [1], 'sales_order_id': [1],
+              'created_date': ['2022-11-03'],
+              'created_time': ['14:20:52.186000'],
+              'last_updated_date': ['2022-11-03'],
+              'last_updated_time': ['14:20:52.186000'],
+              'sales_staff_id': [16], 'counterparty_id': [18],
+              'units_sold': [84754],
+              'unit_price': [2.43], 'currency_id': [3], 'design_id': [9],
+              'agreed_payment_date': ['2022-11-03'],
+              'agreed_delivery_date': ['2022-11-10'],
+              'agreed_delivery_location_id': 4})
+
+    expected_fact_sales['created_date'] = pd.to_datetime(
+        expected_fact_sales['created_date']).dt.date
+    expected_fact_sales['created_time'] = pd.to_datetime(
+        expected_fact_sales['created_time']).dt.time
+    expected_fact_sales['last_updated_date'] = pd.to_datetime(
+        expected_fact_sales['last_updated_date']).dt.date
+    expected_fact_sales['last_updated_time'] = pd.to_datetime(
+        expected_fact_sales['last_updated_time']).dt.time
+
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert_frame_equal(res_df.iloc[:1], expected_fact_sales)
+
+
+def test_transform_staff_dept_table_returns_correct_df_structure(transformer):
+    expected_dim_staff_shape = (10, 6)
+    expected_df_cols = {'staff_id', 'first_name', 'last_name',
+                        'department_name', 'location', 'email_address'}
+
+    staff_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/staff.csv', encoding='utf-8')
+    department_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/department.csv', encoding='utf-8')
+
+    res_df = transformer.transform_staff(staff_df, department_df)
+    assert res_df.shape == expected_dim_staff_shape
+    assert set(res_df.columns) == expected_df_cols

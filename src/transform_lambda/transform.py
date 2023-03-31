@@ -2,6 +2,7 @@ import pandas as pd
 import boto3
 import logging
 import os
+from fastparquet import write
 
 
 logger = logging.getLogger('MyLogger')
@@ -27,16 +28,20 @@ class Transformer:
                  'payment', 'transaction', 'payment_type',
                  'currency', 'department']
 
-    def __init__(self, bucket_name):
+    def __init__(self, bucket_name, processed_bucket_name):
         self.s3_client = boto3.client('s3')
         self.s3_bucket_name = bucket_name
+        self.s3_processed_bucket_name = processed_bucket_name
 
     def list_csv_files(self):
         ingestion_csv_files = self.s3_client.list_objects_v2(
             Bucket=self.s3_bucket_name)['Contents']
         for file in Transformer.FILE_LIST:
             if file not in [item['Key'] for item in ingestion_csv_files]:
-                raise Exception('Files are not complete')
+                msg = 'ERROR: Files are not complete'
+                logger.error(msg)
+                raise Exception(msg)
+
         return Transformer.FILE_LIST
 
     def read_csv(self, key):
@@ -48,6 +53,35 @@ class Transformer:
         except Exception as e:
             logger.error(f'An error occurred reading csv file: {e}')
             raise RuntimeError(e)
+
+    def store_as_parquet(self, file_name, df):
+        if not isinstance(df, pd.DataFrame):
+            msg = 'ERROR: object not a dataframe'
+            logger.error(msg)
+            raise ValueError(msg)
+
+        if not type(file_name) == str:
+            msg = 'ERROR: file_name expects a string'
+            logger.error(msg)
+            raise TypeError(msg)
+
+        try:
+            write(f'/tmp/{file_name}.parq', df)
+
+        except Exception as e:
+            msg = f'An error occurred converting dataframe to parquet: {e}'
+            logger.error(msg)
+            raise Exception(msg)
+
+        try:
+            self.s3_client.upload_file(
+                f'/tmp/{file_name}.parq', self.s3_processed_bucket_name,
+                file_name)
+
+        except Exception as e:
+            msg = f'An error occurred writing parquet file to bucket: {e}'
+            logger.error(msg)
+            raise Exception(msg)
 
     def transform_currency(self, df_currency):
         try:
@@ -80,6 +114,42 @@ class Transformer:
         df['month_name'] = df['date'].dt.strftime("%B")
         df['quarter'] = df['date'].dt.quarter
         return df.loc[:, df.columns != 'date']
+
+    def transform_sales_order(self, df_sales_order):
+        df = pd.DataFrame()
+        df['sales_record_id'] = df_sales_order.reset_index().index + 1
+        df['sales_order_id'] = df_sales_order['sales_order_id']
+        df['created_date'] = pd.to_datetime(
+            df_sales_order['created_at']).dt.date
+        df['created_time'] = pd.to_datetime(
+            df_sales_order['created_at']).dt.time
+        df['last_updated_date'] = pd.to_datetime(
+            df_sales_order['last_updated']).dt.date
+        df['last_updated_time'] = pd.to_datetime(
+            df_sales_order['last_updated']).dt.time
+        df['sales_staff_id'] = df_sales_order['staff_id']
+        df['counterparty_id'] = df_sales_order['counterparty_id']
+        df['units_sold'] = df_sales_order['units_sold']
+        df['unit_price'] = df_sales_order['unit_price']
+        df['currency_id'] = df_sales_order['currency_id']
+        df['design_id'] = df_sales_order['design_id']
+        df['agreed_payment_date'] = df_sales_order['agreed_payment_date']
+        df['agreed_delivery_date'] = df_sales_order['agreed_delivery_date']
+        df['agreed_delivery_location_id'] = \
+            df_sales_order['agreed_delivery_location_id']
+
+        pd.set_option('display.max_colwidth', 100)
+        # print(df.loc[:0].to_string(index=False))
+        return df
+
+    def transform_staff(self, df_staff, df_department):
+        staff_table = df_staff.drop(
+            columns=['created_at', 'last_updated'])
+        department_table = df_department.drop(
+            columns=['created_at', 'last_updated', 'manager'])
+        merged_table = pd.merge(
+            staff_table, department_table, on='department_id')
+        return merged_table.drop(columns=['department_id'])
 
     def store_parquet():
         pass
