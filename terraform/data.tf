@@ -14,6 +14,11 @@ data "local_file" "transform_lambda_archive" {
   filename = "${path.module}/../archives/transform_lambda.zip"
 }
 
+# refers to load deployment package created by make lambda-deployment-packages
+data "local_file" "load_lambda_archive" {
+  filename = "${path.module}/../archives/load_lambda.zip"
+}
+
 # allows use of predefined db credentials secret
 data "aws_secretsmanager_secret" "database_secret" {
   name = "OI_TOTESYS_DB_INFO"

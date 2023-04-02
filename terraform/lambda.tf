@@ -95,3 +95,45 @@ resource "aws_lambda_permission" "allow_extraction_lambda" {
   source_arn = aws_lambda_function.extraction_lambda.arn
 }
 
+########################
+### load lambda ###
+########################
+
+# specifies the IAM role to be associated with the Lambda function using the aws_iam_role resource.
+# specifies the runtime environment and source code for the Lambda function.
+resource "aws_lambda_function" "load_lambda" {
+  function_name    = "load_lambda"
+  role             = aws_iam_role.load_lambda_role.arn
+  handler          = var.load_lambda_handler
+  runtime          = "python3.9"
+  source_code_hash = filebase64sha256(data.local_file.load_lambda_archive.filename)
+  timeout          = 30
+  memory_size      = 192
+
+  # Here's where we specify the code location
+  s3_bucket = aws_s3_bucket.code_bucket.bucket
+  s3_key    = aws_s3_object.load_lambda_code.key
+
+  # makes sure object is created first
+  depends_on = [
+    aws_s3_object.load_lambda_code
+  ]
+
+  # set extracted and processed bucket names as environmental variables
+  environment {
+    variables = {
+      OI_PROCESSED_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" })
+    }
+  }
+}
+
+
+# gives permission for the lambda.amazonaws.com principal to invoke the load_lambda function in response to the transform_lambda function
+resource "aws_lambda_permission" "allow_transform_lambda" {
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.load_lambda.function_name
+  principal     = "lambda.amazonaws.com"
+
+  source_arn = aws_lambda_function.transform_lambda.arn
+}
+
