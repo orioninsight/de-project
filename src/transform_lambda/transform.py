@@ -131,7 +131,7 @@ class Transformer:
 
     def transform_currency(self, df_currency):
         try:
-            df_currency_info = pd.read_csv('src/transform_lambda/currency.csv')
+            df_currency_info = pd.read_csv('./currency.csv')
         except Exception as e:
             logger.error(f'Could not read currency.csv: {e}')
             raise RuntimeError(e)
