@@ -29,6 +29,13 @@ def aws_credentials():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+    yield
+    env_vars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN',
+                'AWS_DEFAULT_REGION']
+    for env_var in env_vars:
+        if env_var in os.environ:
+            del os.environ[env_var]
 
 
 @pytest.fixture(scope='function')
@@ -64,8 +71,8 @@ def transformer(s3):
 @pytest.fixture(scope="module", params=[
     ('currency', (3, 3)),
     ('design', (107, 4)),
-    ('address', (30, 8))
-])
+    ('address', (30, 8)),
+], ids=lambda x: x[0])
 def s3_file(request, transformer):
     key, shape = request.param
     s3_file_df = transformer.read_csv(key)
@@ -265,14 +272,14 @@ def test_transform_sales_order_returns_correct_data(transformer):
               'agreed_delivery_date': ['2022-11-10'],
               'agreed_delivery_location_id': 4})
 
-    expected_fact_sales['created_date'] = pd.to_datetime(
-        expected_fact_sales['created_date']).dt.date
-    expected_fact_sales['created_time'] = pd.to_datetime(
-        expected_fact_sales['created_time']).dt.time
-    expected_fact_sales['last_updated_date'] = pd.to_datetime(
-        expected_fact_sales['last_updated_date']).dt.date
-    expected_fact_sales['last_updated_time'] = pd.to_datetime(
-        expected_fact_sales['last_updated_time']).dt.time
+    # expected_fact_sales['created_date'] = pd.to_datetime(
+    #     expected_fact_sales['created_date']).dt.date
+    # expected_fact_sales['created_time'] = pd.to_datetime(
+    #     expected_fact_sales['created_time']).dt.time
+    # expected_fact_sales['last_updated_date'] = pd.to_datetime(
+    #     expected_fact_sales['last_updated_date']).dt.date
+    # expected_fact_sales['last_updated_time'] = pd.to_datetime(
+    #     expected_fact_sales['last_updated_time']).dt.time
 
     sales_order_df = pd.read_csv(
         f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')

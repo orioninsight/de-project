@@ -22,6 +22,13 @@ def aws_credentials():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+    yield
+    env_vars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN',
+                'AWS_DEFAULT_REGION']
+    for env_var in env_vars:
+        if env_var in os.environ:
+            del os.environ[env_var]
 
 
 @pytest.fixture(scope="function")
@@ -64,8 +71,16 @@ def s3(aws_credentials):
                           'counterparty_legal_country',
                           'counterparty_legal_phone_number'}),
         ('date', {'date_id', 'year', 'month', 'day', 'day_of_week',
-                  'day_name', 'month_name', 'quarter'})
-    ])
+                  'day_name', 'month_name', 'quarter'}),
+        ('sales_order', {'sales_record_id', 'created_date',
+                         'created_time', 'last_updated_date',
+                         'last_updated_time',
+                         'sales_order_id', 'sales_staff_id',
+                         'counterparty_id', 'units_sold', 'unit_price',
+                         'currency_id', 'design_id', 'agreed_payment_date',
+                         'agreed_delivery_date',
+                         'agreed_delivery_location_id'})
+    ], ids=lambda x: x[0])
 def parquet_file(request):
     file_name, cols = request.param
     yield request.param

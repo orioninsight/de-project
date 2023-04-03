@@ -32,9 +32,10 @@ def transform_handler(event, context):
         'counterparty', transformer.transform_counterparty(
             transformer.read_csv('counterparty'), df_address))
     transformer.store_as_parquet('date', transformer.create_dim_date())
-    # transformer.store_as_parquet(
-    #     'sales_order', transformer.transform_sales_order(
-    #         transformer.read_csv('sales_order')))
+    transformer.store_as_parquet(
+        'sales_order', transformer.transform_sales_order(
+            transformer.read_csv('sales_order')))
+
     # call_loader_lambda(loader_lambda_json, event, context)
 
 
@@ -91,7 +92,7 @@ class Transformer:
         try:
             obj = self.s3_client.get_object(Bucket=self.s3_bucket_name,
                                             Key=key)
-            df = pd.read_csv(obj['Body'])
+            df = pd.read_csv(obj['Body'], index_col=False)
             return df
         except Exception as e:
             logger.error(f'An error occurred reading csv file: {e}')
@@ -163,13 +164,13 @@ class Transformer:
         df['sales_record_id'] = df_sales_order.reset_index().index + 1
         df['sales_order_id'] = df_sales_order['sales_order_id']
         df['created_date'] = pd.to_datetime(
-            df_sales_order['created_at']).dt.date
+            df_sales_order['created_at']).dt.date.astype(str)
         df['created_time'] = pd.to_datetime(
-            df_sales_order['created_at']).dt.time
+            df_sales_order['created_at']).dt.time.astype(str)
         df['last_updated_date'] = pd.to_datetime(
-            df_sales_order['last_updated']).dt.date
+            df_sales_order['last_updated']).dt.date.astype(str)
         df['last_updated_time'] = pd.to_datetime(
-            df_sales_order['last_updated']).dt.time
+            df_sales_order['last_updated']).dt.time.astype(str)
         df['sales_staff_id'] = df_sales_order['staff_id']
         df['counterparty_id'] = df_sales_order['counterparty_id']
         df['units_sold'] = df_sales_order['units_sold']
@@ -181,8 +182,6 @@ class Transformer:
         df['agreed_delivery_location_id'] = \
             df_sales_order['agreed_delivery_location_id']
 
-        pd.set_option('display.max_colwidth', 100)
-        # print(df.loc[:0].to_string(index=False))
         return df
 
     def transform_staff(self, df_staff, df_department):
