@@ -2,6 +2,7 @@ import pandas as pd
 import boto3
 import logging
 import os
+import json
 from fastparquet import write
 
 
@@ -10,15 +11,58 @@ logger.setLevel(logging.INFO)
 
 
 def transform_handler(event, context):
-    storer_info_json = os.environ.get('OI_STORER_INFO', None)
-    if storer_info_json is None:
-        raise Exception('Could not find env var OI_STORER_INFO')
-    transformer = Transformer()
-    files = transformer.list_csv_files()
-    for file in files:
-        transform_fn = getattr(transformer, f'transform_{file}')
-        transformer.store_parquet(transform_fn(transformer.read_csv(file)))
-    transformer.store_parquet(transformer.create_dim_date())
+    storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
+    processed_info_json = load_env_var('OI_PROCESSED_INFO', ['s3_bucket_name'])
+    # loader_lambda_json = load_env_var('OI_LOADER_LAMBDA_INFO',
+    #  ['loader_lambda_arn'])
+    transformer = Transformer(storer_info_json['s3_bucket_name'],
+                              processed_info_json['s3_bucket_name'])
+    transformer.list_csv_files()
+    df_address = transformer.read_csv('address')
+    df_department = transformer.read_csv('department')
+    transformer.store_as_parquet(
+        'currency',
+        transformer.transform_currency(transformer.read_csv('currency')))
+    transformer.store_as_parquet(
+        'design', transformer.transform_design(transformer.read_csv('design')))
+    transformer.store_as_parquet(
+        'staff', transformer.transform_staff(
+            transformer.read_csv('staff'), df_department))
+    transformer.store_as_parquet(
+        'counterparty', transformer.transform_counterparty(
+            transformer.read_csv('counterparty'), df_address))
+    transformer.store_as_parquet('date', transformer.create_dim_date())
+    transformer.store_as_parquet(
+        'sales_order', transformer.transform_sales_order(
+            transformer.read_csv('sales_order')))
+
+    # call_loader_lambda(loader_lambda_json, event, context)
+
+
+def call_loader_lambda(fnArn, event, context):
+    client = boto3.client('lambda')
+    inputParams = {}
+    response = client.invoke(
+        FunctionName=fnArn,
+        InvocationType='RequestResponse',
+        Payload=json.dumps(inputParams)
+    )
+    logger.info('Invoking loader lambda...')
+    res = json.load(response['Payload'])
+    logger.info(f'Loader lambda responded with {res}')
+
+
+def load_env_var(env_key, expected_json_keys):
+    try:
+        if env_key in os.environ:
+            env_string = os.environ[env_key]
+        env_json = json.loads(env_string)
+        for key in expected_json_keys:
+            if key not in env_json:
+                raise Exception(f'Missing key in env var ({env_key}): ({key})')
+        return env_json
+    except Exception:
+        raise Exception(f'Error loading JSON for env var ({env_key})')
 
 
 class Transformer:
@@ -48,7 +92,7 @@ class Transformer:
         try:
             obj = self.s3_client.get_object(Bucket=self.s3_bucket_name,
                                             Key=key)
-            df = pd.read_csv(obj['Body'])
+            df = pd.read_csv(obj['Body'], index_col=False)
             return df
         except Exception as e:
             logger.error(f'An error occurred reading csv file: {e}')
@@ -120,13 +164,13 @@ class Transformer:
         df['sales_record_id'] = df_sales_order.reset_index().index + 1
         df['sales_order_id'] = df_sales_order['sales_order_id']
         df['created_date'] = pd.to_datetime(
-            df_sales_order['created_at']).dt.date
+            df_sales_order['created_at']).dt.date.astype(str)
         df['created_time'] = pd.to_datetime(
-            df_sales_order['created_at']).dt.time
+            df_sales_order['created_at']).dt.time.astype(str)
         df['last_updated_date'] = pd.to_datetime(
-            df_sales_order['last_updated']).dt.date
+            df_sales_order['last_updated']).dt.date.astype(str)
         df['last_updated_time'] = pd.to_datetime(
-            df_sales_order['last_updated']).dt.time
+            df_sales_order['last_updated']).dt.time.astype(str)
         df['sales_staff_id'] = df_sales_order['staff_id']
         df['counterparty_id'] = df_sales_order['counterparty_id']
         df['units_sold'] = df_sales_order['units_sold']
@@ -138,8 +182,6 @@ class Transformer:
         df['agreed_delivery_location_id'] = \
             df_sales_order['agreed_delivery_location_id']
 
-        pd.set_option('display.max_colwidth', 100)
-        # print(df.loc[:0].to_string(index=False))
         return df
 
     def transform_staff(self, df_staff, df_department):
@@ -198,6 +240,3 @@ class Transformer:
             msg = f'An error occurred merging tables: {e}'
             logger.error(msg)
             raise Exception(msg)
-
-    def store_parquet():
-        pass

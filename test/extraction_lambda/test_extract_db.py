@@ -73,7 +73,7 @@ def test_raises_exception_given_lambda_payload(info):
 
 
 # @pytest.mark.skip()
-@patch('extract_db.call_transformation_lambda')
+@patch('extract_db.call_transform_lambda')
 def test_extracts_db_table_and_stores_file_in_s3(mock_tf_lambda, s3,
                                                  info,
                                                  downloaded_file):
@@ -86,7 +86,7 @@ def test_extracts_db_table_and_stores_file_in_s3(mock_tf_lambda, s3,
         assert len(f.readlines()) > 0
 
 
-@patch('extract_db.call_transformation_lambda')
+@patch('extract_db.call_transform_lambda')
 @patch('extract_db.extract_db_helper')
 @patch('extract_db.Monitor.has_state_changed', return_value=True)
 def test_extracts_all_db_tables_given_no_payload(
@@ -95,7 +95,7 @@ def test_extracts_all_db_tables_given_no_payload(
     mock_db_helper.assert_called_once_with(VALID_TABLES)
 
 
-@patch('extract_db.call_transformation_lambda')
+@patch('extract_db.call_transform_lambda')
 @patch('extract_db.extract_db_helper')
 def test_extraction_runs_if_no_state_file_and_else_not(
         mock_db_helper, mock_tf_lambda, s3):
@@ -116,7 +116,7 @@ def test_extraction_runs_if_no_state_file_and_else_not(
 
 @patch('extract_db.extract_db_helper')
 @patch('extraction.monitor.Monitor.has_state_changed', return_value=True)
-@patch('extract_db.call_transformation_lambda')
+@patch('extract_db.call_transform_lambda')
 def test_extraction_calls_transformation_lambda_if_db_changed(
         mock_call_tf_lambda, mock_monitor, mock_db_helper, info):
     extract_db_handler({}, None)
@@ -149,7 +149,8 @@ def test_extraction_raises_error_if_missing_db_env_var(mock_retrieve):
 
 @patch('extract_db.retrieve_entry',
        return_value='{"HELLO": "ORION", "WORLD": "INSIGHTS"}')
-def test_load_vars_uses_secret_manager_if_is_secret_set_to_true(mock_retrieve):
+def test_load_env_var_uses_secret_manager_if_is_secret_set_to_true(
+        mock_retrieve):
     no_such_env_key = f'''_TEST_{int(datetime.now().timestamp())}'''
     expected_keys = ['HELLO', 'WORLD']
 
@@ -159,7 +160,7 @@ def test_load_vars_uses_secret_manager_if_is_secret_set_to_true(mock_retrieve):
     assert res_json == {"HELLO": "ORION", "WORLD": "INSIGHTS"}
 
 
-def test_load_vars_raises_error_if_env_var_contains_invalid_keys():
+def test_load_env_var_raises_error_if_env_var_contains_invalid_keys():
     env_key = f'''_TEST_{int(datetime.now().timestamp())}'''
     expected_keys = ['HELLO', 'WORLD']
     os.environ[env_key] = '{"HELL":"ORION", "WOLD":"INSIGHTS"}'

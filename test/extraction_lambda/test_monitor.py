@@ -21,6 +21,13 @@ def aws_credentials():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+    yield
+    env_vars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN',
+                'AWS_DEFAULT_REGION']
+    for env_var in env_vars:
+        if env_var in os.environ:
+            del os.environ[env_var]
 
 
 @pytest.fixture(scope="function")
