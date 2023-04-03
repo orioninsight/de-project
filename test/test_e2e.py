@@ -38,7 +38,7 @@ PROCESSED_BUCKET_NAME = f'''test-processed-bucket-{
 #             del os.environ[var]
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def s3():
     s3_client = boto3.client("s3")
     s3_client.create_bucket(
@@ -95,8 +95,9 @@ def s3():
                          'agreed_delivery_location_id'})
     ], ids=lambda x: x[0])
 def parquet_file(request):
-    file_name, cols = request.param
-    yield request.param
+    key, cols = request.param
+    file_name = f'/tmp/{key}'
+    yield (key, file_name, cols)
     file = Path(f'{file_name}.parq')
     if file.is_file():
         file.unlink()
@@ -114,15 +115,15 @@ def env_vars():
 
 @patch('src.extraction_lambda.extract_db.call_transform_lambda',
        return_value=None)
-def test_currency_data_flows_from_extraction_to_transform(
+def test_data_flows_from_extraction_to_transform(
         mock_tf_lambda, s3, env_vars, parquet_file):
-    file, expected_df_cols = parquet_file
+    key, file, expected_df_cols = parquet_file
 
     extract_db_handler({}, None)
     transform_handler({}, None)
 
     s3.download_file(
-            PROCESSED_BUCKET_NAME, file, f'{file}.parq')
+            PROCESSED_BUCKET_NAME, key, f'{file}.parq')
     pf = fp.ParquetFile(f'{file}.parq')
     res_df = pf.to_pandas()
 

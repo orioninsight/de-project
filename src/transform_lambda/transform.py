@@ -9,6 +9,8 @@ from fastparquet import write
 logger = logging.getLogger('MyLogger')
 logger.setLevel(logging.INFO)
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 
 def transform_handler(event, context):
     storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
@@ -131,7 +133,7 @@ class Transformer:
 
     def transform_currency(self, df_currency):
         try:
-            df_currency_info = pd.read_csv('src/transform_lambda/currency.csv')
+            df_currency_info = pd.read_csv(f'{dir_path}/currency.csv')
         except Exception as e:
             logger.error(f'Could not read currency.csv: {e}')
             raise RuntimeError(e)
