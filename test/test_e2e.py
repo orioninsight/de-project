@@ -17,18 +17,23 @@ PROCESSED_BUCKET_NAME = "test-processed-bucket"
 @pytest.fixture(scope="function")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
+    env_vars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN',
+                'AWS_DEFAULT_REGION']
+    old_env_vars = {var: os.environ.get(var, None) for var in env_vars}
+    #print(old_env_vars)
+
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
     yield
-    env_vars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
-                'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN',
-                'AWS_DEFAULT_REGION']
-    for env_var in env_vars:
-        if env_var in os.environ:
-            del os.environ[env_var]
+    for var in env_vars:
+        if old_env_vars[var] is not None:
+            os.environ[var] = old_env_vars[var]
+        else:
+            del os.environ[var]
 
 
 @pytest.fixture(scope="function")
