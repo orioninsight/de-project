@@ -9,7 +9,7 @@ resource "aws_lambda_function" "extraction_lambda" {
   role             = aws_iam_role.extraction_lambda_role.arn
   handler          = var.extraction_lambda_handler
   runtime          = "python3.9"
-  source_code_hash = filebase64sha256(data.local_file.extraction_lambda_archive.filename)
+  source_code_hash = filemd5(data.local_file.extraction_lambda_archive.filename)
   timeout          = 30
   memory_size      = 192
 
@@ -63,7 +63,7 @@ resource "aws_lambda_function" "transform_lambda" {
   role             = aws_iam_role.transform_lambda_role.arn
   handler          = var.transform_lambda_handler
   runtime          = "python3.9"
-  source_code_hash = filebase64sha256(data.local_file.transform_lambda_archive.filename)
+  source_code_hash = filemd5(data.local_file.transform_lambda_archive.filename)
   timeout          = 30
   memory_size      = 192
 
@@ -79,8 +79,9 @@ resource "aws_lambda_function" "transform_lambda" {
   # set extracted and processed bucket names as environmental variables
   environment {
     variables = {
-      OI_STORER_INFO    = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.ingestion_zone_bucket.id}" }),
-      OI_PROCESSED_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" })
+      OI_STORER_INFO        = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.ingestion_zone_bucket.id}" }),
+      OI_PROCESSED_INFO     = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" }),
+      OI_LOAD_LAMBDA_INFO = jsonencode({ "load_lambda_arn" : "${aws_lambda_function.load_lambda.arn}" })
     }
   }
 }
@@ -95,9 +96,9 @@ resource "aws_lambda_permission" "allow_extraction_lambda" {
   source_arn = aws_lambda_function.extraction_lambda.arn
 }
 
-########################
+###################
 ### load lambda ###
-########################
+###################
 
 # specifies the IAM role to be associated with the Lambda function using the aws_iam_role resource.
 # specifies the runtime environment and source code for the Lambda function.
@@ -106,7 +107,7 @@ resource "aws_lambda_function" "load_lambda" {
   role             = aws_iam_role.load_lambda_role.arn
   handler          = var.load_lambda_handler
   runtime          = "python3.9"
-  source_code_hash = filebase64sha256(data.local_file.load_lambda_archive.filename)
+  source_code_hash = filemd5(data.local_file.load_lambda_archive.filename)
   timeout          = 30
   memory_size      = 192
 
@@ -122,7 +123,7 @@ resource "aws_lambda_function" "load_lambda" {
   # set extracted and processed bucket names as environmental variables
   environment {
     variables = {
-      OI_PROCESSED_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" })
+      OI_PROCESSED_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" }),
     }
   }
 }
