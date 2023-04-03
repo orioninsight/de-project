@@ -13,12 +13,14 @@ logger.setLevel(logging.INFO)
 def transform_handler(event, context):
     storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
     processed_info_json = load_env_var('OI_PROCESSED_INFO', ['s3_bucket_name'])
-    # loader_lambda_json = load_env_var('OI_LOADER_LAMBDA_INFO',
-    #  ['loader_lambda_arn'])
+    # loader_lambda_json = load_env_var('OI_LOAD_LAMBDA_INFO',
+    #  ['load_lambda_arn'])
     transformer = Transformer(storer_info_json['s3_bucket_name'],
                               processed_info_json['s3_bucket_name'])
     transformer.list_csv_files()
     df_address = transformer.read_csv('address')
+    transformer.store_as_parquet(
+        'address', transformer.transform_address(df_address))
     df_department = transformer.read_csv('department')
     transformer.store_as_parquet(
         'currency',
