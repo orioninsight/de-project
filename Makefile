@@ -45,33 +45,31 @@ requirements: create-environment
 
 ##Install requirments for lambda deployment
 lambda-deployment-packages:
-	@if test -d "./archives/tmp"; then \
-		echo "Error: ./archives/tmp directory already exists."; \
-		exit 1; \
-	fi
-
 	@if ! which zip > /dev/null; then \
     echo "Error: zip is not installed. Please install zip and try again."; \
     exit 1; \
 	fi
 
-	mkdir -p ./archives/tmp
-	$(call execute_in_env, $(PIP) install -r ./deployment/extraction_requirements.txt -t ./archives/tmp/)
-	cp -r ./src/extraction_lambda/* ./archives/tmp/
-	cd ./archives/tmp && zip -r ../extraction_lambda.zip ./*
-	rm -R ./archives/tmp
+	@if [ -d "archives/extraction_lambda" ]; then \
+  		rm -rf "archives/extraction_lambda"; \
+	fi
+	mkdir -p ./archives/extraction_lambda
+	$(call execute_in_env, $(PIP) install -r ./deployment/extraction_requirements.txt -t ./archives/extraction_lambda/)
+	cp -r ./src/extraction_lambda/* ./archives/extraction_lambda/
 
-	mkdir -p ./archives/tmp
-	$(call execute_in_env, $(PIP) install -r ./deployment/transform_requirements.txt -t ./archives/tmp/)
-	cp -r ./src/transform_lambda/* ./archives/tmp/
-	cd ./archives/tmp && zip -r ../transform_lambda.zip ./*
-	rm -R ./archives/tmp
+	@if [ -d "archives/transform_lambda" ]; then \
+  		rm -rf "archives/transform_lambda"; \
+	fi
+	mkdir -p ./archives/transform_lambda
+	$(call execute_in_env, $(PIP) install -r ./deployment/transform_requirements.txt -t ./archives/transform_lambda/)
+	cp -r ./src/transform_lambda/* ./archives/transform_lambda/
 
-	mkdir -p ./archives/tmp
-	$(call execute_in_env, $(PIP) install -r ./deployment/load_requirements.txt -t ./archives/tmp/)
-	cp -r ./src/load_lambda/* ./archives/tmp/
-	cd ./archives/tmp && zip -r ../load_lambda.zip ./*
-	rm -R ./archives/tmp
+	@if [ -d "archives/load_lambda" ]; then \
+  		rm -rf "archives/load_lambda"; \
+	fi
+	mkdir -p ./archives/load_lambda
+	$(call execute_in_env, $(PIP) install -r ./deployment/load_requirements.txt -t ./archives/load_lambda/)
+	cp -r ./src/load_lambda/* ./archives/load_lambda/
 
 
 ## Install bandit
