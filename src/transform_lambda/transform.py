@@ -9,6 +9,8 @@ from fastparquet import write
 logger = logging.getLogger('MyLogger')
 logger.setLevel(logging.INFO)
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 
 def transform_handler(event, context):
     storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
