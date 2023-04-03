@@ -56,6 +56,8 @@ def s3(aws_credentials):
 
 @pytest.fixture(
     scope='function', params=[
+        ('address', {'location_id', 'address_line_1', 'address_line_2',
+                     'district', 'city', 'postal_code', 'country', 'phone'}),
         ('currency', {'currency_code', 'currency_id', 'currency_name'}),
         ('design', {'design_id', 'design_name',
                     'file_location', 'file_name'}),
