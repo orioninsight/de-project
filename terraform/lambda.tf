@@ -9,7 +9,7 @@ resource "aws_lambda_function" "extraction_lambda" {
   role             = aws_iam_role.extraction_lambda_role.arn
   handler          = var.extraction_lambda_handler
   runtime          = "python3.9"
-  source_code_hash = filemd5(data.archive_file.extraction_lambda_archive.output_path)
+  source_code_hash = filebase64sha256(data.archive_file.extraction_lambda_archive.output_path)
   timeout          = 30
   memory_size      = 192
 
@@ -63,7 +63,7 @@ resource "aws_lambda_function" "transform_lambda" {
   role             = aws_iam_role.transform_lambda_role.arn
   handler          = var.transform_lambda_handler
   runtime          = "python3.9"
-  source_code_hash = filemd5(data.archive_file.transform_lambda_archive.output_path)
+  source_code_hash = filebase64sha256(data.archive_file.transform_lambda_archive.output_path)
   timeout          = 30
   memory_size      = 192
 
@@ -107,7 +107,7 @@ resource "aws_lambda_function" "load_lambda" {
   role             = aws_iam_role.load_lambda_role.arn
   handler          = var.load_lambda_handler
   runtime          = "python3.9"
-  source_code_hash = filemd5(data.archive_file.load_lambda_archive.output_path)
+  source_code_hash = filebase64sha256(data.archive_file.load_lambda_archive.output_path)
   timeout          = 30
   memory_size      = 192
 
