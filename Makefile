@@ -67,6 +67,13 @@ lambda-deployment-packages:
 	cd ./archives/tmp && zip -r ../transform_lambda.zip ./*
 	rm -R ./archives/tmp
 
+	mkdir -p ./archives/tmp
+	$(call execute_in_env, $(PIP) install -r ./deployment/load_requirements.txt -t ./archives/tmp/)
+	cp -r ./src/load_lambda/* ./archives/tmp/
+	cd ./archives/tmp && zip -r ../load_lambda.zip ./*
+	rm -R ./archives/tmp
+
+
 ## Install bandit
 bandit:
 	$(call execute_in_env, $(PIP) install bandit)
