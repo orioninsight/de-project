@@ -1,6 +1,7 @@
 import os
 import logging
 import json
+import boto3
 from extraction.extractor import Extractor
 from extraction.saver import Saver
 from extraction.storer import Storer
@@ -34,24 +35,25 @@ def extract_db_handler(event, context):
         if type(tables_to_extract) is not list:
             raise (Exception("Event payload requires list "
                              f"in 'extract_table' but got {event} instead"))
-        db_secret_string = (os.environ['OI_TOTESYS_SECRET_STRING']
-                            if 'OI_TOTESYS_SECRET_STRING' in
-                            os.environ else retrieve_entry('totesys_db'))
-        db_secret_json = json.loads(db_secret_string)
+        db_secret_json = load_env_var('OI_TOTESYS_DB_INFO',
+                                      ['host', 'port', 'user',
+                                       'password', 'database'], True)
+        storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
+        transform_lambda_info_json = load_env_var('OI_TRANSFORM_LAMBDA_INFO',
+                                                  ['transform_lambda_arn'])
         extractor = Extractor(**db_secret_json)
         saver = Saver()
-        storer_secret_string = (os.environ['OI_STORER_SECRET_STRING']
-                                if 'OI_STORER_SECRET_STRING' in
-                                os.environ else retrieve_entry('storer_info'))
-        storer_secret_json = json.loads(storer_secret_string)
-        storer = Storer(**storer_secret_json)
-        monitor = Monitor(storer_secret_json["s3_bucket_name"], extractor)
+        storer = Storer(**storer_info_json)
+        monitor = Monitor(storer_info_json["s3_bucket_name"], extractor)
+        logger.info('Checking state of db...')
         if monitor.has_state_changed():
             extract_db_helper(tables_to_extract)
-            call_transformation_lambda(event, context)
+            call_transform_lambda(
+                transform_lambda_info_json['transform_lambda_arn'],
+                event, context)
     except Exception as e:
         logger.error(f'An error occurred extracting the data: {e}')
-        raise RuntimeError(e)
+        raise e
     finally:
         if 'extractor' in globals() and extractor is not None:
             extractor.close()
@@ -60,7 +62,7 @@ def extract_db_handler(event, context):
 def extract_db_helper(tables_to_extract):
     """ AWS Lambda to extract tables from Totesys DB
 
-        Relies on environmental variable 'OI_TOTESYS_SECRET_STRING'
+        Relies on environmental variable 'OI_TOTESYS_DB_INFO'
         or AWS secret called 'totesys_db' to be
         a parseable JSON string with the following key-value pairs:
 
@@ -72,14 +74,13 @@ def extract_db_helper(tables_to_extract):
 
         or as JSON: {"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}
 
-        Relies on environt variable 'OI_STORER_SECRET_STRING' or AWS secret called 'storer_info' to be
+        Relies on environt variable 'OI_STORER_INFO' or AWS secret called 'storer_info' to be
         a parseable JSON string with the following key-value pairs:
 
         - s3_bucket_name=<Name of the S3 bucket to store extracted files'
 
         or as JSON: {"s3_bucket_name":"BUCKET_NAME"}
     """  # noqa: E501
-
     for table in tables_to_extract:
         if table in VALID_TABLES:
             extract_fn = getattr(extractor, f'extract_{table}')
@@ -98,20 +99,29 @@ def extract_db_helper(tables_to_extract):
             raise Exception(f"Unsupported table '{table}' to extract")
 
 
-def call_transformation_lambda(event, context):
-    return True
-    # client = boto3.client('lambda')
-    # inputParams = {
-    #     "ProductName": "iPhone SE",
-    #     "Quantity": 2,
-    #     "UnitPrice": 499
-    # }
+def call_transform_lambda(fnArn, event, context):
+    client = boto3.client('lambda')
+    inputParams = {}
+    response = client.invoke(
+        FunctionName=fnArn,
+        InvocationType='RequestResponse',
+        Payload=json.dumps(inputParams)
+    )
+    logger.info('Invoking transform lambda...')
+    res = json.load(response['Payload'])
+    logger.info(f'Tranform lambda responded with {res}')
 
-    # response = client.invoke(
-    #     FunctionName='arn:aws:lambda:us-east-1:441836517159:'
-    #     'function:transformation-lambda',
-    #     InvocationType='RequestResponse',
-    #     Payload=json.dumps(inputParams)
-    # )
 
-    # return json.load(response['Payload'])
+def load_env_var(env_key, expected_json_keys, is_secret=False):
+    try:
+        if env_key in os.environ:
+            env_string = os.environ[env_key]
+        elif is_secret:
+            env_string = retrieve_entry(env_key)
+        env_json = json.loads(env_string)
+        for key in expected_json_keys:
+            if key not in env_json:
+                raise Exception(f'Missing key in env var ({env_key}): ({key})')
+        return env_json
+    except Exception:
+        raise Exception(f'Error loading JSON for env var ({env_key})')

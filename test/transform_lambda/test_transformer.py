@@ -8,17 +8,17 @@ import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
 import tempfile
 import fastparquet as fp
-from src.transform_lambda.transform import Transformer
+from src.transform_lambda.transform import (
+    Transformer, transform_handler, load_env_var)
 
 
-bucket_name = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
-processed_bucket_name =\
+BUCKET_NAME = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
+PROCESSED_BUCKET_NAME =\
     f'test-processed-bucket-{int(datetime.now().timestamp())}'
-# TEST_DATA_PATH = 'test/transforming_lambda/data'
-# get dynamic data path
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 TEST_DATA_PATH = f'{script_dir}/data'
+TEST_DATA_PATH = 'test/transform_lambda/data'
 
 
 @pytest.fixture(scope="module")
@@ -29,8 +29,21 @@ def aws_credentials():
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-    os.environ['OI_STORER_SECRET_STRING'] = json.dumps(
-        {'s3_bucket_name': bucket_name})
+    yield
+    env_vars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN',
+                'AWS_DEFAULT_REGION']
+    for env_var in env_vars:
+        if env_var in os.environ:
+            del os.environ[env_var]
+
+
+@pytest.fixture(scope='function')
+def info():
+    os.environ['OI_STORER_INFO'] = json.dumps(
+        {"s3_bucket_name": BUCKET_NAME})
+    os.environ['OI_PROCESSED_INFO'] = json.dumps(
+            {"s3_bucket_name": PROCESSED_BUCKET_NAME})
 
 
 @pytest.fixture(scope="module")
@@ -41,25 +54,25 @@ def s3(aws_credentials):
                      'payment', 'transaction', 'payment_type',
                      'currency', 'department']
         s3_client = boto3.client("s3")
-        s3_client.create_bucket(Bucket=bucket_name)
-        s3_client.create_bucket(Bucket=processed_bucket_name)
+        s3_client.create_bucket(Bucket=BUCKET_NAME)
+        s3_client.create_bucket(Bucket=PROCESSED_BUCKET_NAME)
         for file_name in file_list:
             with open(f'{TEST_DATA_PATH}/{file_name}.csv', 'rb') as f:
-                s3_client.put_object(Bucket=bucket_name,
+                s3_client.put_object(Bucket=BUCKET_NAME,
                                      Key=f'{file_name}', Body=f)
         yield s3_client
 
 
 @pytest.fixture(scope='module')
 def transformer(s3):
-    return Transformer(bucket_name, processed_bucket_name)
+    return Transformer(BUCKET_NAME, PROCESSED_BUCKET_NAME)
 
 
 @pytest.fixture(scope="module", params=[
     ('currency', (3, 3)),
-    ('design', (10, 4)),
-    ('address', (10, 8))
-])
+    ('design', (107, 4)),
+    ('address', (30, 8)),
+], ids=lambda x: x[0])
 def s3_file(request, transformer):
     key, shape = request.param
     s3_file_df = transformer.read_csv(key)
@@ -69,11 +82,22 @@ def s3_file(request, transformer):
 @pytest.fixture(scope='function')
 def s3_deleter(s3):
     file_name = Transformer.FILE_LIST[0]
-    s3.delete_object(Bucket=bucket_name, Key=file_name)
+    s3.delete_object(Bucket=BUCKET_NAME, Key=file_name)
     yield file_name
-    s3.put_object(Bucket=bucket_name,
+    s3.put_object(Bucket=BUCKET_NAME,
                   Key=f'{file_name}',
                   Body=open(f'{TEST_DATA_PATH}/{file_name}.csv', 'rb'))
+
+
+@pytest.fixture(scope='function', params=['OI_STORER_INFO',
+                                          'OI_PROCESSED_INFO'])
+def unset_set_env(request):
+    db_secret_string = os.environ.get(request.param, None)
+    if db_secret_string is not None:
+        del os.environ[request.param]
+    yield request.param
+    if db_secret_string is not None:
+        os.environ[request.param] = db_secret_string
 
 
 def test_list_csv_files_returns_list_of_csv_files(s3,
@@ -94,7 +118,7 @@ def test_read_csv_returns_data_frame(s3, transformer):
                   1,2,3,4
                     '''
     for file_name in Transformer.FILE_LIST:
-        s3.put_object(Bucket=bucket_name,
+        s3.put_object(Bucket=BUCKET_NAME,
                       Key=f'{file_name}_test',
                       Body=csv_data.encode('utf-8'))
     result = transformer.read_csv('department_test')
@@ -105,12 +129,17 @@ def test_read_csv_returns_data_frame(s3, transformer):
     assert_frame_equal(result, expected_df)
 
 
+def test_read_csv_raises_error(s3, transformer):
+    with pytest.raises(Exception):
+        transformer.read_csv('NO_SUCH_CSV_FILE')
+
+
 def test_store_as_parquet_object_is_stored_bucket(s3, transformer):
     df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
 
     transformer.store_as_parquet('mock_address', df)
     retrieved_parquet_metadata = transformer.s3_client.head_object(
-        Bucket=processed_bucket_name, Key='mock_address')
+        Bucket=PROCESSED_BUCKET_NAME, Key='mock_address')
 
     assert retrieved_parquet_metadata is not None
 
@@ -169,8 +198,13 @@ def test_transform_currency_returns_correct_data_frame_structure(transformer):
     assert set(res_df.columns) == expected_df_cols
 
 
+def test_transform_currency_raises_error_given_no_csv_file(transformer):
+    with pytest.raises(Exception):
+        pd.read_csv('NO_SUCH_FILE.csv', encoding='utf-8')
+
+
 def test_transform_design_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (10, 4)
+    expected_df_shape = (107, 4)
     expected_df_cols = {'design_id', 'design_name',
                         'file_location', 'file_name'}
 
@@ -183,7 +217,7 @@ def test_transform_design_returns_correct_data_frame_structure(transformer):
 
 
 def test_transform_address_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (10, 8)
+    expected_df_shape = (30, 8)
     expected_df_cols = {'location_id', 'address_line_1', 'address_line_2',
                         'district', 'city', 'postal_code', 'country', 'phone'}
 
@@ -205,3 +239,99 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
     res_df = transformer.create_dim_date()
     assert expected_dim_date_shape == res_df.shape
     assert_series_equal(res_df.iloc[0, :], expected_first_row)
+
+
+def test_transform_sales_order_returns_correct_data_frame(transformer):
+    expected_df_shape = (1544, 15)
+    expected_df_cols = {'sales_record_id', 'created_date',
+                        'created_time', 'last_updated_date',
+                        'last_updated_time',
+                        'sales_order_id', 'sales_staff_id',
+                        'counterparty_id', 'units_sold', 'unit_price',
+                        'currency_id', 'design_id', 'agreed_payment_date',
+                        'agreed_delivery_date',
+                        'agreed_delivery_location_id'}
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_sales_order_returns_correct_data(transformer):
+    expected_fact_sales = pd.DataFrame(
+        data={'sales_record_id': [1], 'sales_order_id': [1],
+              'created_date': ['2022-11-03'],
+              'created_time': ['14:20:52.186000'],
+              'last_updated_date': ['2022-11-03'],
+              'last_updated_time': ['14:20:52.186000'],
+              'sales_staff_id': [16], 'counterparty_id': [18],
+              'units_sold': [84754],
+              'unit_price': [2.43], 'currency_id': [3], 'design_id': [9],
+              'agreed_payment_date': ['2022-11-03'],
+              'agreed_delivery_date': ['2022-11-10'],
+              'agreed_delivery_location_id': 4})
+
+    # expected_fact_sales['created_date'] = pd.to_datetime(
+    #     expected_fact_sales['created_date']).dt.date
+    # expected_fact_sales['created_time'] = pd.to_datetime(
+    #     expected_fact_sales['created_time']).dt.time
+    # expected_fact_sales['last_updated_date'] = pd.to_datetime(
+    #     expected_fact_sales['last_updated_date']).dt.date
+    # expected_fact_sales['last_updated_time'] = pd.to_datetime(
+    #     expected_fact_sales['last_updated_time']).dt.time
+
+    sales_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
+    res_df = transformer.transform_sales_order(sales_order_df)
+    assert_frame_equal(res_df.iloc[:1], expected_fact_sales)
+
+
+def test_transform_staff_dept_table_returns_correct_df_structure(transformer):
+    expected_dim_staff_shape = (20, 6)
+    expected_df_cols = {'staff_id', 'first_name', 'last_name',
+                        'department_name', 'location', 'email_address'}
+
+    staff_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/staff.csv', encoding='utf-8')
+    department_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/department.csv', encoding='utf-8')
+
+    res_df = transformer.transform_staff(staff_df, department_df)
+    assert res_df.shape == expected_dim_staff_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_counterparty_returns_correct_df_structure(transformer):
+    expected_dim_counterparty_shape = (20, 9)
+    expected_df_cols = {'counterparty_id',
+                        'counterparty_legal_name',
+                        'counterparty_legal_address_line_1',
+                        'counterparty_legal_address_line_2',
+                        'counterparty_legal_district',
+                        'counterparty_legal_city',
+                        'counterparty_legal_postal_code',
+                        'counterparty_legal_country',
+                        'counterparty_legal_phone_number'}
+
+    counterparty_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/counterparty.csv', encoding='utf-8')
+    address_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/address.csv', encoding='utf-8')
+
+    res_df = transformer.transform_counterparty(counterparty_df, address_df)
+    assert res_df.shape == expected_dim_counterparty_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_raises_error_if_env_var_not_set(info, unset_set_env):
+    with pytest.raises(Exception, match=unset_set_env):
+        transform_handler({}, None)
+
+
+def test_load_env_var_raises_error_if_env_var_contains_invalid_keys():
+    env_key = f'''_TEST_{int(datetime.now().timestamp())}'''
+    expected_keys = ['HELLO', 'WORLD']
+    os.environ[env_key] = '{"HELL":"ORION", "WOLD":"INSIGHTS"}'
+    with pytest.raises(Exception, match='Error loading JSON for env var'):
+        load_env_var(env_key, expected_keys)

@@ -7,9 +7,9 @@ import json
 
 @pytest.fixture(scope='function')
 def extractor():
-    creds = (os.environ['OI_TOTESYS_SECRET_STRING']
-             if 'OI_TOTESYS_SECRET_STRING' in os.environ
-             else retrieve_entry('totesys_db'))
+    creds = (os.environ['OI_TOTESYS_DB_INFO']
+             if 'OI_TOTESYS_DB_INFO' in os.environ
+             else retrieve_entry('OI_TOTESYS_DB_INFO'))
     return Extractor(**json.loads(creds))
 
 

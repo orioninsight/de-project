@@ -16,11 +16,21 @@ S3_TEST_BUCKET_NAME = "test-bucket"
 @pytest.fixture(scope="function")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
+    env_vars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
+                'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN',
+                'AWS_DEFAULT_REGION']
+    old_env_vars = {var: os.environ.get(var, None) for var in env_vars}
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
     os.environ["AWS_SECURITY_TOKEN"] = "testing"
     os.environ["AWS_SESSION_TOKEN"] = "testing"
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+    yield
+    for var in env_vars:
+        if old_env_vars[var] is not None:
+            os.environ[var] = old_env_vars[var]
+        else:
+            del os.environ[var]
 
 
 @pytest.fixture(scope="function")
@@ -68,21 +78,30 @@ def test_get_current_state_returns_0_if_stats_json_mispelt_key(s3, monitor):
     db_state = {"tup_delete": 0, "tup_update": 0, "tup_inserted": 0}
     s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
                   Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
-    assert monitor.get_current_state() == 0
+    with pytest.raises(Exception, match="S3 object db_state has missing"):
+        monitor.get_current_state()
 
 
 def test_get_current_state_returns_0_if_stats_json_non_int_values(s3, monitor):
     db_state = {"tup_deleted": 0, "tup_updated": '0', "tup_inserted": 0}
     s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
                   Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
-    assert monitor.get_current_state() == 0
+    with pytest.raises(Exception, match="S3 object db_state has missing"):
+        monitor.get_current_state()
 
 
 def test_get_current_state_returns_0_if_stats_json_missing_key(s3, monitor):
     db_state = {"tup_deleted": 0, "tup_updated": 0}
     s3.put_object(Bucket=S3_TEST_BUCKET_NAME,
                   Body=json.dumps(db_state), Key=Monitor.DB_STATE_KEY)
-    assert monitor.get_current_state() == 0
+    with pytest.raises(Exception, match="S3 object db_state has missing"):
+        monitor.get_current_state()
+
+
+def test_get_current_state_returns_0_if_non_key_client_error(s3, monitor):
+    monitor.s3_bucket_name = 'NO-SUCH-BUCKET'
+    with pytest.raises(Exception):
+        monitor.get_current_state()
 
 
 def test_save_state_saves_new_state_to_s3_bucket(s3, monitor):
