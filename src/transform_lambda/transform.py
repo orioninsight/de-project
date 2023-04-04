@@ -11,6 +11,8 @@ logger.setLevel(logging.INFO)
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
+''' reads environment variables for S3 bucket names, reads CSV files, transforms the dataframes, and stores the dataframes as Parquet files in the specified S3 bucket.'''
+
 
 def transform_handler(event, context):
     storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
@@ -56,6 +58,9 @@ def call_loader_lambda(fnArn, event, context):
     logger.info(f'Loader lambda responded with {res}')
 
 
+'''load environment variables as JSON and check that the expected keys are present.'''
+
+
 def load_env_var(env_key, expected_json_keys):
     try:
         if env_key in os.environ:
@@ -81,7 +86,9 @@ class Transformer:
         self.s3_bucket_name = bucket_name
         self.s3_processed_bucket_name = processed_bucket_name
 
-    def list_csv_files(self):
+    '''list the expected CSV files and raise an exception if any are missing.'''
+
+   def list_csv_files(self):
         ingestion_csv_files = self.s3_client.list_objects_v2(
             Bucket=self.s3_bucket_name)['Contents']
         for file in Transformer.FILE_LIST:
@@ -92,7 +99,9 @@ class Transformer:
 
         return Transformer.FILE_LIST
 
-    def read_csv(self, key):
+    '''read a CSV file from S3 and return a Pandas dataframe.'''
+
+   def read_csv(self, key):
         try:
             obj = self.s3_client.get_object(Bucket=self.s3_bucket_name,
                                             Key=key)
@@ -102,7 +111,9 @@ class Transformer:
             logger.error(f'An error occurred reading csv file: {e}')
             raise RuntimeError(e)
 
-    def store_as_parquet(self, file_name, df):
+    '''store a dataframe as a Parquet file in a specified S3 bucket.'''
+
+   def store_as_parquet(self, file_name, df):
         if not isinstance(df, pd.DataFrame):
             msg = 'ERROR: object not a dataframe'
             logger.error(msg)
@@ -130,8 +141,10 @@ class Transformer:
             msg = f'An error occurred writing parquet file to bucket: {e}'
             logger.error(msg)
             raise Exception(msg)
+        
+    '''transform the currency dataframe by joining it with a reference dataframe and dropping some columns.'''
 
-    def transform_currency(self, df_currency):
+   def transform_currency(self, df_currency):
         try:
             df_currency_info = pd.read_csv(f'{dir_path}/currency.csv')
         except Exception as e:
@@ -142,14 +155,20 @@ class Transformer:
             on='currency_code', how='left')
         return df_currency.drop(columns=['created_at', 'last_updated'])
 
-    def transform_design(self, df_design):
+    '''transform the design dataframe by dropping some columns.'''
+
+   def transform_design(self, df_design):
         return df_design.drop(columns=['created_at', 'last_updated'])
 
-    def transform_address(self, df_address):
+    '''transform the address dataframe by dropping some columns and renaming a column.'''
+
+   def transform_address(self, df_address):
         return df_address.drop(columns=['created_at', 'last_updated']).rename(
             columns={'address_id': 'location_id'})
 
-    def create_dim_date(self, from_date_string='2022-11-3',
+    '''create a dataframe of dates between two specified dates.'''
+
+   def create_dim_date(self, from_date_string='2022-11-3',
                         to_date_string='2023-5-1'):
         df = pd.DataFrame(pd.date_range(
             from_date_string, to_date_string), columns=['date'])
@@ -162,6 +181,8 @@ class Transformer:
         df['month_name'] = df['date'].dt.strftime("%B")
         df['quarter'] = df['date'].dt.quarter
         return df.loc[:, df.columns != 'date']
+
+    '''transforms a pandas DataFrame of sales orders into a format suitable for insertion into a star schema. '''
 
     def transform_sales_order(self, df_sales_order):
         df = pd.DataFrame()
@@ -188,6 +209,8 @@ class Transformer:
 
         return df
 
+    ''' transforms a pandas DataFrame of staff and a pandas DataFrame of departments into a format suitable for insertion into a star schema.'''
+
     def transform_staff(self, df_staff, df_department):
         staff_table = df_staff.drop(
             columns=['created_at', 'last_updated'])
@@ -197,6 +220,7 @@ class Transformer:
             staff_table, department_table, on='department_id')
         return merged_table.drop(columns=['department_id'])
 
+    '''Transforms a pandas DataFrame of counterparty data and a pandas DataFrame of address data into a format suitable for insertion into a star schema.'''
     def transform_counterparty(self, df_counterparty, df_address):
 
         try:
