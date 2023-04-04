@@ -114,7 +114,7 @@ class Transformer:
             raise TypeError(msg)
 
         try:
-            write(f'/tmp/{file_name}'.pd, df)
+            write(f'/tmp/{file_name}.parq', df)
 
         except Exception as e:
             msg = f'An error occurred converting dataframe to parquet: {e}'
@@ -153,7 +153,7 @@ class Transformer:
                         to_date_string='2023-5-1'):
         df = pd.DataFrame(pd.date_range(
             from_date_string, to_date_string), columns=['date'])
-        df['date_id'] = df['date'].dt.strftime('%Y%m%d').astype(int)
+        df['date_id'] = df['date'].dt.strftime('%Y-%m-%d')
         df['year'] = df['date'].dt.year
         df['month'] = df['date'].dt.month
         df['day'] = df['date'].dt.day
@@ -250,8 +250,12 @@ class Transformer:
             columns=['created_at', 'last_updated'])
         return df_payment_type
 
-
     def transform_transaction(self, df_transaction):
         df_transaction = df_transaction.drop(
             columns=['created_at', 'last_updated'])
         return df_transaction
+
+
+# t = Transformer('', '')
+# df = t.create_dim_date()
+# write('/tmp/date.parq', df)

@@ -136,7 +136,7 @@ def test_store_as_parquet_object_is_stored_bucket(s3, transformer):
     transformer.store_as_parquet('mock_address', df)
     retrieved_parquet_metadata = transformer.s3_client.head_object(
         Bucket=PROCESSED_BUCKET_NAME, Key='mock_address')
-
+    # Delete mock_address parquet file!
     assert retrieved_parquet_metadata is not None
 
 
@@ -144,7 +144,7 @@ def test_store_as_parquet_check_integrity_of_object(s3, transformer):
     df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
 
     transformer.store_as_parquet('mock_address', df)
-
+    # Delete mock_address parquet file!
     # Download the parquet file from S3 to a temporary local file
     with tempfile.NamedTemporaryFile() as temp_file:
         transformer.s3_client.download_file(
@@ -195,7 +195,7 @@ def test_transform_currency_returns_correct_data_frame_structure(transformer):
 
 
 def test_transform_design_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (10, 4)
+    expected_df_shape = (107, 4)
     expected_df_cols = {'design_id', 'design_name',
                         'file_location', 'file_name'}
 
@@ -208,7 +208,7 @@ def test_transform_design_returns_correct_data_frame_structure(transformer):
 
 
 def test_transform_address_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (10, 8)
+    expected_df_shape = (30, 8)
     expected_df_cols = {'location_id', 'address_line_1', 'address_line_2',
                         'district', 'city', 'postal_code', 'country', 'phone'}
 
@@ -224,7 +224,8 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
     expected_dim_date_shape = (180, 8)
     expected_first_row = pd.Series(
         name=0,  # Equals row num here
-        data=[20221103, 2022, 11, 3, 3, 'Thursday', 'November', 4],
+        data=['2022-11-03',
+              2022, 11, 3, 3, 'Thursday', 'November', 4],
         index=['date_id', 'year', 'month', 'day', 'day_of_week',
                'day_name', 'month_name', 'quarter'])
     res_df = transformer.create_dim_date()
@@ -233,7 +234,7 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
 
 
 def test_transform_sales_order_returns_correct_data_frame(transformer):
-    expected_df_shape = (1518, 15)
+    expected_df_shape = (1544, 15)
     expected_df_cols = {'sales_record_id', 'created_date',
                         'created_time', 'last_updated_date',
                         'last_updated_time',
@@ -269,7 +270,7 @@ def test_transform_sales_order_returns_correct_data(transformer):
 
 
 def test_transform_staff_dept_table_returns_correct_df_structure(transformer):
-    expected_dim_staff_shape = (10, 6)
+    expected_dim_staff_shape = (20, 6)
     expected_df_cols = {'staff_id', 'first_name', 'last_name',
                         'department_name', 'location', 'email_address'}
 
@@ -326,8 +327,7 @@ def test_transform_transaction_returns_correct_df_structure(transformer):
                         'purchase_order_id'}
 
     transaction_df = pd.read_csv(
-        f'{TEST_DATA_PATH}/transaction.csv', encoding='utf-8')
-    
+        f'{TEST_DATA_PATH}/transaction.csv', encoding='utf-8')    
     res_df = transformer.transform_payment_type(transaction_df)
     assert res_df.shape == expected_dim_transaction_shape
     assert set(res_df.columns) == expected_df_cols

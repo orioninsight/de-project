@@ -98,9 +98,9 @@ def parquet_file(request):
     key, cols = request.param
     file_name = f'/tmp/{key}'
     yield (key, file_name, cols)
-    file = Path(f'{file_name}.parq')
-    if file.is_file():
-        file.unlink()
+    # file = Path(f'{file_name}.parq')
+    # if file.is_file():
+    #     file.unlink()
 
 
 @pytest.fixture(scope='function')
