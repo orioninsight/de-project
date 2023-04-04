@@ -3,7 +3,6 @@ import boto3
 import logging
 import os
 import json
-from fastparquet import write
 
 
 logger = logging.getLogger('MyLogger')
@@ -40,7 +39,7 @@ def transform_handler(event, context):
         'sales_order', transformer.transform_sales_order(
             transformer.read_csv('sales_order')))
 
-    call_loader_lambda(loader_lambda_json, event, context)
+    call_loader_lambda(loader_lambda_json['load_lambda_arn'], event, context)
 
 
 def call_loader_lambda(fnArn, event, context):
@@ -114,7 +113,7 @@ class Transformer:
             raise TypeError(msg)
 
         try:
-            write(f'/tmp/{file_name}.parq', df)
+            df.to_parquet(f'/tmp/{file_name}.parq')
 
         except Exception as e:
             msg = f'An error occurred converting dataframe to parquet: {e}'

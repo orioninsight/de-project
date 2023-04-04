@@ -14,7 +14,7 @@ data "archive_file" "extraction_lambda_archive" {
 # zips up transform package created by make lambda-deployment-packages
 data "archive_file" "transform_lambda_archive" {
   type             = "zip"
-  source_dir      = "${path.module}/../archives/transform_lambda"
+  source_dir      = "${path.module}/../src/transform_lambda"
   output_path      = "${path.module}/../archives/transform_lambda.zip"
 }
 
