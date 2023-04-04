@@ -15,8 +15,8 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 def transform_handler(event, context):
     storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
     processed_info_json = load_env_var('OI_PROCESSED_INFO', ['s3_bucket_name'])
-    # loader_lambda_json = load_env_var('OI_LOAD_LAMBDA_INFO',
-    #  ['load_lambda_arn'])
+    loader_lambda_json = load_env_var('OI_LOAD_LAMBDA_INFO',
+                                      ['load_lambda_arn'])
     transformer = Transformer(storer_info_json['s3_bucket_name'],
                               processed_info_json['s3_bucket_name'])
     transformer.list_csv_files()
@@ -40,7 +40,7 @@ def transform_handler(event, context):
         'sales_order', transformer.transform_sales_order(
             transformer.read_csv('sales_order')))
 
-    # call_loader_lambda(loader_lambda_json, event, context)
+    call_loader_lambda(loader_lambda_json, event, context)
 
 
 def call_loader_lambda(fnArn, event, context):
