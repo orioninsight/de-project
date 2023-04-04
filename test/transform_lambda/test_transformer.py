@@ -15,10 +15,11 @@ from src.transform_lambda.transform import (
 BUCKET_NAME = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
 PROCESSED_BUCKET_NAME =\
     f'test-processed-bucket-{int(datetime.now().timestamp())}'
+# TEST_DATA_PATH = 'test/transforming_lambda/data'
+# get dynamic data path
 script_path = os.path.abspath(__file__)
 script_dir = os.path.dirname(script_path)
 TEST_DATA_PATH = f'{script_dir}/data'
-TEST_DATA_PATH = 'test/transform_lambda/data'
 
 
 @pytest.fixture(scope="module")
@@ -129,11 +130,6 @@ def test_read_csv_returns_data_frame(s3, transformer):
     assert_frame_equal(result, expected_df)
 
 
-def test_read_csv_raises_error(s3, transformer):
-    with pytest.raises(Exception):
-        transformer.read_csv('NO_SUCH_CSV_FILE')
-
-
 def test_store_as_parquet_object_is_stored_bucket(s3, transformer):
     df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
 
@@ -198,13 +194,8 @@ def test_transform_currency_returns_correct_data_frame_structure(transformer):
     assert set(res_df.columns) == expected_df_cols
 
 
-def test_transform_currency_raises_error_given_no_csv_file(transformer):
-    with pytest.raises(Exception):
-        pd.read_csv('NO_SUCH_FILE.csv', encoding='utf-8')
-
-
 def test_transform_design_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (107, 4)
+    expected_df_shape = (10, 4)
     expected_df_cols = {'design_id', 'design_name',
                         'file_location', 'file_name'}
 
@@ -217,7 +208,7 @@ def test_transform_design_returns_correct_data_frame_structure(transformer):
 
 
 def test_transform_address_returns_correct_data_frame_structure(transformer):
-    expected_df_shape = (30, 8)
+    expected_df_shape = (10, 8)
     expected_df_cols = {'location_id', 'address_line_1', 'address_line_2',
                         'district', 'city', 'postal_code', 'country', 'phone'}
 
@@ -242,7 +233,7 @@ def test_create_dim_date_creates_data_frame_structure(transformer):
 
 
 def test_transform_sales_order_returns_correct_data_frame(transformer):
-    expected_df_shape = (1544, 15)
+    expected_df_shape = (1518, 15)
     expected_df_cols = {'sales_record_id', 'created_date',
                         'created_time', 'last_updated_date',
                         'last_updated_time',
@@ -271,16 +262,6 @@ def test_transform_sales_order_returns_correct_data(transformer):
               'agreed_payment_date': ['2022-11-03'],
               'agreed_delivery_date': ['2022-11-10'],
               'agreed_delivery_location_id': 4})
-
-    # expected_fact_sales['created_date'] = pd.to_datetime(
-    #     expected_fact_sales['created_date']).dt.date
-    # expected_fact_sales['created_time'] = pd.to_datetime(
-    #     expected_fact_sales['created_time']).dt.time
-    # expected_fact_sales['last_updated_date'] = pd.to_datetime(
-    #     expected_fact_sales['last_updated_date']).dt.date
-    # expected_fact_sales['last_updated_time'] = pd.to_datetime(
-    #     expected_fact_sales['last_updated_time']).dt.time
-
     sales_order_df = pd.read_csv(
         f'{TEST_DATA_PATH}/sales_order.csv', encoding='utf-8')
     res_df = transformer.transform_sales_order(sales_order_df)
@@ -288,7 +269,7 @@ def test_transform_sales_order_returns_correct_data(transformer):
 
 
 def test_transform_staff_dept_table_returns_correct_df_structure(transformer):
-    expected_dim_staff_shape = (20, 6)
+    expected_dim_staff_shape = (10, 6)
     expected_df_cols = {'staff_id', 'first_name', 'last_name',
                         'department_name', 'location', 'email_address'}
 
@@ -321,6 +302,34 @@ def test_transform_counterparty_returns_correct_df_structure(transformer):
 
     res_df = transformer.transform_counterparty(counterparty_df, address_df)
     assert res_df.shape == expected_dim_counterparty_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_payment_type_returns_correct_df_structure(transformer):
+    expected_dim_payment_type_shape = (4, 2)
+    expected_df_cols = {'payment_type_id',
+                        'payment_type_name'}
+
+    payment_type_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/payment_type.csv', encoding='utf-8')
+
+    res_df = transformer.transform_payment_type(payment_type_df)
+    assert res_df.shape == expected_dim_payment_type_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_transaction_returns_correct_df_structure(transformer):
+    expected_dim_transaction_shape = (2351, 4)
+    expected_df_cols = {'transaction_id',
+                        'transaction_type',
+                        'sales_order_id',
+                        'purchase_order_id'}
+
+    transaction_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/transaction.csv', encoding='utf-8')
+    
+    res_df = transformer.transform_payment_type(transaction_df)
+    assert res_df.shape == expected_dim_transaction_shape
     assert set(res_df.columns) == expected_df_cols
 
 

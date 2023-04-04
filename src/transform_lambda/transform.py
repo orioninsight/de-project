@@ -100,7 +100,7 @@ class Transformer:
             return df
         except Exception as e:
             logger.error(f'An error occurred reading csv file: {e}')
-            raise RuntimeError(e)
+            raise RuntimeError()
 
     def store_as_parquet(self, file_name, df):
         if not isinstance(df, pd.DataFrame):
@@ -114,7 +114,7 @@ class Transformer:
             raise TypeError(msg)
 
         try:
-            write(f'/tmp/{file_name}.parq', df)
+            write(f'/tmp/{file_name}'.pd, df)
 
         except Exception as e:
             msg = f'An error occurred converting dataframe to parquet: {e}'
@@ -136,7 +136,7 @@ class Transformer:
             df_currency_info = pd.read_csv(f'{dir_path}/currency.csv')
         except Exception as e:
             logger.error(f'Could not read currency.csv: {e}')
-            raise RuntimeError(e)
+            raise RuntimeError()
         df_currency = df_currency.join(
             df_currency_info.set_index('currency_code'),
             on='currency_code', how='left')
@@ -244,3 +244,14 @@ class Transformer:
             msg = f'An error occurred merging tables: {e}'
             logger.error(msg)
             raise Exception(msg)
+
+    def transform_payment_type(self, df_payment_type):
+        df_payment_type = df_payment_type.drop(
+            columns=['created_at', 'last_updated'])
+        return df_payment_type
+
+
+    def transform_transaction(self, df_transaction):
+        df_transaction = df_transaction.drop(
+            columns=['created_at', 'last_updated'])
+        return df_transaction
