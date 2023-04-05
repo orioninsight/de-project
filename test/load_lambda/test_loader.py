@@ -1,5 +1,5 @@
 from pathlib import Path
-from moto import mock_s3, mock_rds
+from moto import mock_s3
 import boto3
 from datetime import datetime
 import os
@@ -8,8 +8,6 @@ import pandas as pd
 import pytest
 from src.load_lambda.load import Loader, loader_handler
 from pandas.testing import assert_frame_equal
-import sqlite3
-from unittest.mock import patch
 from sqlalchemy import create_engine, text
 
 
@@ -20,6 +18,7 @@ script_dir = os.path.dirname(script_path)
 TEST_DATA_PATH = f'{script_dir}/data'
 
 TEST_DB = 'test.db'
+
 
 @pytest.fixture(scope="module")
 def aws_credentials():

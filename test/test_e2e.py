@@ -80,9 +80,9 @@ def parquet_file(request):
     key, cols = request.param
     file_name = f'/tmp/{key}'
     yield (key, file_name, cols)
-    # file = Path(f'{file_name}.parq')
-    # if file.is_file():
-    #     file.unlink()
+    file = Path(f'{file_name}.parq')
+    if file.is_file():
+        file.unlink()
 
 
 @pytest.fixture(scope='function')
@@ -93,12 +93,16 @@ def env_vars():
         {'transform_lambda_arn': 'AN ARN'})
     os.environ['OI_PROCESSED_INFO'] = json.dumps(
         {'s3_bucket_name': PROCESSED_BUCKET_NAME})
+    os.environ['OI_LOAD_LAMBDA_INFO'] = json.dumps(
+        {'load_lambda_arn': 'AN ARN'})
 
 
 @patch('src.extraction_lambda.extract_db.call_transform_lambda',
        return_value=None)
+@patch('src.transform_lambda.transform.call_loader_lambda',
+       return_value=None)
 def test_data_flows_from_extraction_to_transform(
-        mock_tf_lambda, s3, env_vars, parquet_file):
+        mock_tf_lambda, mock_ld_lambda, s3, env_vars, parquet_file):
     key, file, expected_df_cols = parquet_file
 
     extract_db_handler({}, None)

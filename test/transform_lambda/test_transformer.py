@@ -9,8 +9,10 @@ import pytest
 from pandas.testing import assert_frame_equal, assert_series_equal
 import tempfile
 import fastparquet as fp
+from unittest.mock import patch
+from unittest.mock import MagicMock
 from src.transform_lambda.transform import (
-    Transformer, transform_handler, load_env_var)
+    Transformer, transform_handler, load_env_var, call_loader_lambda)
 
 
 BUCKET_NAME = f'test-extraction-bucket-{int(datetime.now().timestamp())}'
@@ -45,7 +47,8 @@ def info():
     os.environ['OI_STORER_INFO'] = json.dumps(
         {"s3_bucket_name": BUCKET_NAME})
     os.environ['OI_PROCESSED_INFO'] = json.dumps(
-            {"s3_bucket_name": PROCESSED_BUCKET_NAME})
+        {"s3_bucket_name": PROCESSED_BUCKET_NAME})
+    os.environ['OI_LOAD_LAMBDA_INFO'] = '{"load_lambda_arn":"ARN"}'
 
 
 @pytest.fixture(scope="module")
@@ -92,7 +95,9 @@ def s3_deleter(s3):
 
 
 @pytest.fixture(scope='function', params=['OI_STORER_INFO',
-                                          'OI_PROCESSED_INFO'])
+                                          'OI_PROCESSED_INFO',
+                                          'OI_LOAD_LAMBDA_INFO'],
+                )
 def unset_set_env(request):
     db_secret_string = os.environ.get(request.param, None)
     if db_secret_string is not None:
@@ -140,7 +145,8 @@ def test_read_csv_returns_data_frame(s3, transformer):
     assert_frame_equal(result, expected_df)
 
 
-def test_store_as_parquet_object_is_stored_bucket(s3, transformer, tmp_parquet):
+def test_store_as_parquet_object_is_stored_bucket(
+        s3, transformer, tmp_parquet):
     df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
 
     transformer.store_as_parquet(tmp_parquet, df)
@@ -150,7 +156,8 @@ def test_store_as_parquet_object_is_stored_bucket(s3, transformer, tmp_parquet):
     assert retrieved_parquet_metadata is not None
 
 
-def test_store_as_parquet_check_integrity_of_object(s3, transformer, tmp_parquet):
+def test_store_as_parquet_check_integrity_of_object(
+        s3, transformer, tmp_parquet):
     df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
 
     transformer.store_as_parquet(tmp_parquet, df)
@@ -336,7 +343,7 @@ def test_transform_transaction_returns_correct_df_structure(transformer):
                         'purchase_order_id'}
 
     transaction_df = pd.read_csv(
-        f'{TEST_DATA_PATH}/transaction.csv', encoding='utf-8')    
+        f'{TEST_DATA_PATH}/transaction.csv', encoding='utf-8')
     res_df = transformer.transform_payment_type(transaction_df)
     assert res_df.shape == expected_dim_transaction_shape
     assert set(res_df.columns) == expected_df_cols
@@ -394,3 +401,21 @@ def test_load_env_var_raises_error_if_env_var_contains_invalid_keys():
     os.environ[env_key] = '{"HELL":"ORION", "WOLD":"INSIGHTS"}'
     with pytest.raises(Exception, match='Error loading JSON for env var'):
         load_env_var(env_key, expected_keys)
+
+
+def test_extraction_calls_transformation_lambda_if_db_changed():
+    mock_lambda_client = MagicMock()
+    mock_response_payload = MagicMock()
+    mock_response_payload.read.return_value = json.dumps(
+        {"result": "success"}).encode('utf-8')
+
+    mock_lambda_client.invoke.return_value = {
+        "Payload": mock_response_payload
+    }
+
+    with patch('boto3.client', return_value=mock_lambda_client) as mock_client:
+        event = {}
+        context = {}
+        call_loader_lambda('fakearn', event, context)
+
+        assert mock_client.return_value.invoke.call_count == 1

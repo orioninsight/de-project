@@ -28,6 +28,9 @@ resource "aws_lambda_function" "extraction_lambda" {
       OI_TRANSFORM_LAMBDA_INFO = jsonencode({ "transform_lambda_arn" : "${aws_lambda_function.transform_lambda.arn}" })
     }
   }
+
+  #add pandas layer
+  layers = ["arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:5"]
 }
 
 
@@ -79,11 +82,14 @@ resource "aws_lambda_function" "transform_lambda" {
   # set extracted and processed bucket names as environmental variables
   environment {
     variables = {
-      OI_STORER_INFO        = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.ingestion_zone_bucket.id}" }),
-      OI_PROCESSED_INFO     = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" }),
+      OI_STORER_INFO      = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.ingestion_zone_bucket.id}" }),
+      OI_PROCESSED_INFO   = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" }),
       OI_LOAD_LAMBDA_INFO = jsonencode({ "load_lambda_arn" : "${aws_lambda_function.load_lambda.arn}" })
     }
   }
+
+  #add pandas layer
+  layers = ["arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:5"]
 }
 
 
@@ -126,6 +132,9 @@ resource "aws_lambda_function" "load_lambda" {
       OI_PROCESSED_INFO = jsonencode({ "s3_bucket_name" : "${aws_s3_bucket.transformed_zone_bucket.id}" }),
     }
   }
+
+  #add pandas layer
+  layers = ["arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:5"]
 }
 
 

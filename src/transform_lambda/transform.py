@@ -3,7 +3,6 @@ import boto3
 import logging
 import os
 import json
-from fastparquet import write
 
 
 logger = logging.getLogger('MyLogger')
@@ -13,10 +12,14 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
 def transform_handler(event, context):
+    """reads environment variables for S3 bucket names,
+    reads CSV files, transforms the dataframes,
+    and stores the dataframes as Parquet files in the specified S3 bucket.
+    """
     storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
     processed_info_json = load_env_var('OI_PROCESSED_INFO', ['s3_bucket_name'])
-    # loader_lambda_json = load_env_var('OI_LOAD_LAMBDA_INFO',
-    #  ['load_lambda_arn'])
+    loader_lambda_json = load_env_var('OI_LOAD_LAMBDA_INFO',
+                                      ['load_lambda_arn'])
     transformer = Transformer(storer_info_json['s3_bucket_name'],
                               processed_info_json['s3_bucket_name'])
     transformer.list_csv_files()
@@ -52,7 +55,7 @@ def transform_handler(event, context):
         'purchase_order', transformer.transform_purchase_order(
             transformer.read_csv('purchase_order')))
 
-    # call_loader_lambda(loader_lambda_json, event, context)
+    call_loader_lambda(loader_lambda_json['load_lambda_arn'], event, context)
 
 
 def call_loader_lambda(fnArn, event, context):
@@ -69,6 +72,9 @@ def call_loader_lambda(fnArn, event, context):
 
 
 def load_env_var(env_key, expected_json_keys):
+    """load environment variables as JSON and
+    check that the expected keys are present.
+    """
     try:
         if env_key in os.environ:
             env_string = os.environ[env_key]
@@ -94,6 +100,9 @@ class Transformer:
         self.s3_processed_bucket_name = processed_bucket_name
 
     def list_csv_files(self):
+        """list the expected CSV files and
+        raise an exception if any are missing.
+        """
         ingestion_csv_files = self.s3_client.list_objects_v2(
             Bucket=self.s3_bucket_name)['Contents']
         for file in Transformer.FILE_LIST:
@@ -105,6 +114,7 @@ class Transformer:
         return Transformer.FILE_LIST
 
     def read_csv(self, key):
+        """read a CSV file from S3 and return a Pandas dataframe."""
         try:
             obj = self.s3_client.get_object(Bucket=self.s3_bucket_name,
                                             Key=key)
@@ -115,6 +125,7 @@ class Transformer:
             raise RuntimeError()
 
     def store_as_parquet(self, file_name, df):
+        """store a dataframe as a Parquet file in a specified S3 bucket."""
         if not isinstance(df, pd.DataFrame):
             msg = 'ERROR: object not a dataframe'
             logger.error(msg)
@@ -126,7 +137,7 @@ class Transformer:
             raise TypeError(msg)
 
         try:
-            write(f'/tmp/{file_name}.parq', df)
+            df.to_parquet(f'/tmp/{file_name}.parq')
 
         except Exception as e:
             msg = f'An error occurred converting dataframe to parquet: {e}'
@@ -144,6 +155,9 @@ class Transformer:
             raise Exception(msg)
 
     def transform_currency(self, df_currency):
+        """ transform the currency dataframe by joining it
+        with a reference dataframe and dropping some columns.
+        """
         try:
             df_currency_info = pd.read_csv(f'{dir_path}/currency.csv')
         except Exception as e:
@@ -155,14 +169,19 @@ class Transformer:
         return df_currency.drop(columns=['created_at', 'last_updated'])
 
     def transform_design(self, df_design):
+        """ transform the design dataframe by dropping some columns."""
         return df_design.drop(columns=['created_at', 'last_updated'])
 
     def transform_address(self, df_address):
+        """ transform the address dataframe by dropping
+        some columns and renaming a column.
+        """
         return df_address.drop(columns=['created_at', 'last_updated']).rename(
             columns={'address_id': 'location_id'})
 
     def create_dim_date(self, from_date_string='2022-11-3',
                         to_date_string='2023-5-1'):
+        """create a dataframe of dates between two specified dates."""
         df = pd.DataFrame(pd.date_range(
             from_date_string, to_date_string), columns=['date'])
         df['date_id'] = df['date'].dt.strftime('%Y-%m-%d')
@@ -176,6 +195,9 @@ class Transformer:
         return df.loc[:, df.columns != 'date']
 
     def transform_sales_order(self, df_sales_order):
+        """transforms a pandas DataFrame of sales
+        orders into a format suitable for insertion into a star schema.
+        """
         df = pd.DataFrame()
         df['sales_record_id'] = df_sales_order.reset_index().index + 1
         df['sales_order_id'] = df_sales_order['sales_order_id']
@@ -201,6 +223,10 @@ class Transformer:
         return df
 
     def transform_staff(self, df_staff, df_department):
+        """transforms a pandas DataFrame of staff and
+        a pandas DataFrame of departments into a
+        format suitable for insertion into a star schema.
+        """
         staff_table = df_staff.drop(
             columns=['created_at', 'last_updated'])
         department_table = df_department.drop(
@@ -210,6 +236,10 @@ class Transformer:
         return merged_table.drop(columns=['department_id'])
 
     def transform_counterparty(self, df_counterparty, df_address):
+        """Transforms a pandas DataFrame of counterparty
+        data and a pandas DataFrame of address data
+        into a format suitable for insertion into a star schema.
+        """
 
         try:
             # drop counterparty columns
@@ -266,7 +296,7 @@ class Transformer:
         df_transaction = df_transaction.drop(
             columns=['created_at', 'last_updated'])
         return df_transaction
-    
+
     def transform_payment(self, df_payment):
         df = pd.DataFrame()
         df['payment_record_id'] = df_payment.reset_index().index + 1
