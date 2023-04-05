@@ -14,6 +14,14 @@ Load - This Lambda function takes the Parquet files produced by the Transform fu
 
 The pipeline is designed to be fault-tolerant, with error handling built into each Lambda function.
 
+![App Screenshot](https://github.com/orioninsight/de-project/blob/main/architecture_diagrams/png/architecture_diagram.png)
+
+## Testing
+
+This project was developed using robust TDD, using a mixture of mocked and temporary AWS resources with pytest and moto3. Coverage was used to provide an insight into test coverage.
+
+Flake8 was used to ensure pep8 compliance while bandit and safety employed to improve the security of our code.
+
 ## CI/CD
 
 This project uses Continuous Integration and Continuous Deployment (CI/CD) through GitHub Actions to automate the build, test, and deployment process.
@@ -34,12 +42,6 @@ This ETL pipeline provides a reliable way to extract data from the Totesys datab
     make lambda-deployment-packages
 ````
 
-note zip is a dependency to make lambda deployment packages
-
-```bash
-   sudo apt install zip -y
-```
-
 Add a secret with ID **OI_TOTESYS_DB_INFO** to AWS Secrets Manager in the following format, **replacing values**:
 ```
     {"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}
@@ -50,6 +52,8 @@ If only testing locally (not deploying via terraform), export variable **OI_TOTE
     export OI_TOTESYS_DB_INFO='{"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}'
 ```
 
+Configure AWS credentials using AWS CLI
+
 ## Run all tests / checks
 ```bash
    make run-checks
@@ -58,7 +62,7 @@ If only testing locally (not deploying via terraform), export variable **OI_TOTE
 ## Terraform
 
 1. Create sandbox if needed
-2. AWS configure
+2. Ensure AWS credentials are sufficient
 3. cd into terraform folder
 
 If backend bucket for terraform does not already exist follow these steps:
@@ -86,7 +90,7 @@ If backend bucket for terraform does not already exist follow these steps:
   }
   ```
 
-4. variable extraction_lambda_handler in vars.tf should match the defined handler function e.g. extract_db.extract_db_handler
+4. Lambda handler variables can be changed in vars.tf if there is a need during development
 
 5. Run in terraform folder:
 
