@@ -3,7 +3,6 @@ import boto3
 import logging
 import os
 import json
-from fastparquet import write
 
 
 logger = logging.getLogger('MyLogger')
@@ -17,8 +16,8 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 def transform_handler(event, context):
     storer_info_json = load_env_var('OI_STORER_INFO', ['s3_bucket_name'])
     processed_info_json = load_env_var('OI_PROCESSED_INFO', ['s3_bucket_name'])
-    # loader_lambda_json = load_env_var('OI_LOAD_LAMBDA_INFO',
-    #  ['load_lambda_arn'])
+    loader_lambda_json = load_env_var('OI_LOAD_LAMBDA_INFO',
+                                      ['load_lambda_arn'])
     transformer = Transformer(storer_info_json['s3_bucket_name'],
                               processed_info_json['s3_bucket_name'])
     transformer.list_csv_files()
@@ -42,7 +41,7 @@ def transform_handler(event, context):
         'sales_order', transformer.transform_sales_order(
             transformer.read_csv('sales_order')))
 
-    # call_loader_lambda(loader_lambda_json, event, context)
+    call_loader_lambda(loader_lambda_json['load_lambda_arn'], event, context)
 
 
 def call_loader_lambda(fnArn, event, context):
@@ -125,7 +124,7 @@ class Transformer:
             raise TypeError(msg)
 
         try:
-            write(f'/tmp/{file_name}.parq', df)
+            df.to_parquet(f'/tmp/{file_name}.parq')
 
         except Exception as e:
             msg = f'An error occurred converting dataframe to parquet: {e}'

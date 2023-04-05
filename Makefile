@@ -57,13 +57,6 @@ lambda-deployment-packages:
 	$(call execute_in_env, $(PIP) install -r ./deployment/extraction_requirements.txt -t ./archives/extraction_lambda/)
 	cp -r ./src/extraction_lambda/* ./archives/extraction_lambda/
 
-	@if [ -d "archives/transform_lambda" ]; then \
-  		rm -rf "archives/transform_lambda"; \
-	fi
-	mkdir -p ./archives/transform_lambda
-	$(call execute_in_env, $(PIP) install -r ./deployment/transform_requirements.txt -t ./archives/transform_lambda/)
-	cp -r ./src/transform_lambda/* ./archives/transform_lambda/
-
 	@if [ -d "archives/load_lambda" ]; then \
   		rm -rf "archives/load_lambda"; \
 	fi
