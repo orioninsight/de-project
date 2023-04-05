@@ -30,4 +30,8 @@ data "aws_secretsmanager_secret" "database_secret" {
   name = "OI_TOTESYS_DB_INFO"
 }
 
+# allows use of predefined data warehouse credentials secret
+data "aws_secretsmanager_secret" "datawarehouse_secret" {
+  name = "OI_TOTESYS_DW_INFO"
+}
 
