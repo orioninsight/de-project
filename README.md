@@ -1,3 +1,11 @@
+![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![Terraform](https://img.shields.io/badge/terraform-%235835CC.svg?style=for-the-badge&logo=terraform&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white)
+![Postgres](https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+![Build Status](https://img.shields.io/github/actions/workflow/status/orioninsight/de-project/deploy.yml?style=for-the-badge)
+![Code Size](https://img.shields.io/github/languages/code-size/orioninsight/de-project?style=for-the-badge)
+![Contributors](https://img.shields.io/github/contributors/orioninsight/de-project?style=for-the-badge)
 # ETL Project for Totesys
 
 This project is an ETL (Extract, Transform, Load) pipeline designed for Totesys. The goal of the pipeline is to take data from a database and convert it into a format suitable for analysis in a data warehouse. The pipeline uses AWS Lambda and S3 to perform the ETL tasks.
@@ -14,7 +22,10 @@ Load - This Lambda function takes the Parquet files produced by the Transform fu
 
 The pipeline is designed to be fault-tolerant, with error handling built into each Lambda function.
 
+
 ![App Screenshot](https://github.com/orioninsight/de-project/blob/main/architecture_diagrams/png/architecture_diagram.png)
+
+The pipeline was monitored via cloudwatch metrics and an SNS topic triggered on alarm.
 
 ## Testing
 
@@ -25,6 +36,8 @@ Flake8 was used to ensure pep8 compliance while bandit and safety employed to im
 ## CI/CD
 
 This project uses Continuous Integration and Continuous Deployment (CI/CD) through GitHub Actions to automate the build, test, and deployment process.
+
+We employ infrastructure as code to enable agile deployment using terraform.
 
 ## Conclusion
 
