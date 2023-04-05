@@ -22,7 +22,7 @@ def loader_handler(event, context):
     loader.connect_db(**dw_secret_json)
     # Delete in reverse order, starting with fact tables, to comply
     # With integrity constraints
-    for table in list(loader.FILE_LIST.values())[::-1]:
+    for table in list(Loader.FILE_LIST.values())[::-1]:
         loader.delete_table(table)
     # Load all dim tables, then fact table (ordered last)
     for key, table_name in loader.FILE_LIST.items():
@@ -48,11 +48,19 @@ def load_env_var(env_key, expected_json_keys, is_secret=False):
     except Exception:
         raise Exception(f'Error loading JSON for env var ({env_key})')
 
+
 class Loader:
 
-    FILE_LIST = {'address': 'dim_location', 'design': 'dim_design',
-                 'counterparty': 'dim_counterparty', 'staff': 'dim_staff',
-                 'currency': 'dim_currency', 'date': 'dim_date',
+    FILE_LIST = {'address': 'dim_location',
+                 'design': 'dim_design',
+                 'counterparty': 'dim_counterparty',
+                 'staff': 'dim_staff',
+                 'currency': 'dim_currency',
+                 'date': 'dim_date',
+                 'payment_type': 'dim_payment_type',
+                 'transaction': 'dim_transaction',
+                 'purchase_order': 'fact_purchase_order',
+                 'payment': 'fact_payment',
                  'sales_order': 'fact_sales_order'}
 
     conn = None
@@ -103,23 +111,45 @@ class Loader:
         if key == 'date':
             df['date_id'] = pd.to_datetime(
                 df['date_id'], format='%Y-%m-%d').dt.date
-        if key == 'sales_order':
-            df.drop(columns=['sales_record_id'], inplace=True)
-            df.rename(columns={'unit_price': 'unit price'}, inplace=True)
+        elif key == 'sales_order':
             df['created_date'] = pd.to_datetime(
                 df['created_date'], format='%Y-%m-%d').dt.date
+            df['created_time'] = pd.to_datetime(
+                df['created_time'], infer_datetime_format=True).dt.time
+            df['last_updated_time'] = pd.to_datetime(
+                df['last_updated_time'], infer_datetime_format=True).dt.time
             df['last_updated_date'] = pd.to_datetime(
                 df['last_updated_date'], format='%Y-%m-%d').dt.date
             df['agreed_delivery_date'] = pd.to_datetime(
                 df['agreed_delivery_date'], format='%Y-%m-%d').dt.date
             df['agreed_payment_date'] = pd.to_datetime(
                 df['agreed_payment_date'], format='%Y-%m-%d').dt.date
+        elif key == 'purchase_order':
+            df['created_date'] = pd.to_datetime(
+                df['created_date'], format='%Y-%m-%d').dt.date
+            df['created_time'] = pd.to_datetime(
+                df['created_time'], infer_datetime_format=True).dt.time
+            df['last_updated_date'] = pd.to_datetime(
+                df['last_updated_date'], format='%Y-%m-%d').dt.date
+            df['last_updated_time'] = pd.to_datetime(
+                df['last_updated_time'], infer_datetime_format=True).dt.time
+            df['agreed_delivery_date'] = pd.to_datetime(
+                df['agreed_delivery_date'], format='%Y-%m-%d').dt.date
             df['agreed_payment_date'] = pd.to_datetime(
                 df['agreed_payment_date'], format='%Y-%m-%d').dt.date
-            df['last_updated_time'] = pd.to_datetime(
-                df['last_updated_time'], format='%H:%M:%S%f').dt.time
+        elif key == 'payment':
+            df['created_date'] = pd.to_datetime(
+                df['created_date'], format='%Y-%m-%d').dt.date
             df['created_time'] = pd.to_datetime(
-                df['created_time'], format='%H:%M:%S%f').dt.time
+                df['created_time'], infer_datetime_format=True).dt.time
+            df['last_updated_date'] = pd.to_datetime(
+                df['last_updated_date'], format='%Y-%m-%d').dt.date
+            df['last_updated_time'] = pd.to_datetime(
+                df['last_updated_time'], infer_datetime_format=True).dt.time
+            df.rename(columns={'last_updated_time': 'last_updated'},
+                      inplace=True)
+            df['payment_date'] = pd.to_datetime(
+                df['payment_date'], format='%Y-%m-%d').dt.date
         try:
             self.write_to_dw(table_name, df)
         except Exception as e:

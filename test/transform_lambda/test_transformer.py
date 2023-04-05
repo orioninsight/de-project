@@ -1,3 +1,4 @@
+from pathlib import Path
 from moto import mock_s3
 import boto3
 import os
@@ -101,6 +102,15 @@ def unset_set_env(request):
         os.environ[request.param] = db_secret_string
 
 
+@pytest.fixture(scope='function')
+def tmp_parquet():
+    file_name = 'mock_address'
+    yield file_name
+    file = Path(f'/tmp/{file_name}.parq')
+    if file.is_file():
+        file.unlink()
+
+
 def test_list_csv_files_returns_list_of_csv_files(s3,
                                                   transformer):
     for file in transformer.list_csv_files():
@@ -130,25 +140,24 @@ def test_read_csv_returns_data_frame(s3, transformer):
     assert_frame_equal(result, expected_df)
 
 
-def test_store_as_parquet_object_is_stored_bucket(s3, transformer):
+def test_store_as_parquet_object_is_stored_bucket(s3, transformer, tmp_parquet):
     df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
 
-    transformer.store_as_parquet('mock_address', df)
+    transformer.store_as_parquet(tmp_parquet, df)
     retrieved_parquet_metadata = transformer.s3_client.head_object(
-        Bucket=PROCESSED_BUCKET_NAME, Key='mock_address')
+        Bucket=PROCESSED_BUCKET_NAME, Key=tmp_parquet)
     # Delete mock_address parquet file!
     assert retrieved_parquet_metadata is not None
 
 
-def test_store_as_parquet_check_integrity_of_object(s3, transformer):
+def test_store_as_parquet_check_integrity_of_object(s3, transformer, tmp_parquet):
     df = pd.DataFrame(data={'a': [1], 'b': [2], 'c': [3], 'd': [4]})
 
-    transformer.store_as_parquet('mock_address', df)
-    # Delete mock_address parquet file!
+    transformer.store_as_parquet(tmp_parquet, df)
     # Download the parquet file from S3 to a temporary local file
     with tempfile.NamedTemporaryFile() as temp_file:
         transformer.s3_client.download_file(
-            transformer.s3_processed_bucket_name, 'mock_address',
+            transformer.s3_processed_bucket_name, tmp_parquet,
             temp_file.name)
 
         # Read the parquet file using fastparquet
@@ -331,6 +340,47 @@ def test_transform_transaction_returns_correct_df_structure(transformer):
     res_df = transformer.transform_payment_type(transaction_df)
     assert res_df.shape == expected_dim_transaction_shape
     assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_payment_returns_correct_data(transformer):
+    expected_dim_payment_shape = (2351, 13)
+    expected_fact_payment = pd.DataFrame(
+        data={'payment_record_id': [1], 'payment_id': [2],
+              'created_date': ['2022-11-03'],
+              'created_time': ['14:20:52.187000'],
+              'last_updated_date': ['2022-11-03'],
+              'last_updated_time': ['14:20:52.187000'],
+              'transaction_id': [2], 'counterparty_id': [15],
+              'payment_amount': [552548.62],
+              'currency_id': [2], 'payment_type_id': [3],
+              'paid': [False],
+              'payment_date': ['2022-11-04']})
+    payment_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/payment.csv', encoding='utf-8')
+    res_df = transformer.transform_payment(payment_df)
+    assert res_df.shape == expected_dim_payment_shape
+    assert_frame_equal(res_df.iloc[:1], expected_fact_payment)
+
+
+def test_transform_purchase_order_returns_correct_data(transformer):
+    expected_fact_purchase_shape = (807, 15)
+    expected_fact_purchase = pd.DataFrame(
+        data={'purchase_record_id': [1], 'purchase_order_id': [1],
+              'created_date': ['2022-11-03'],
+              'created_time': ['14:20:52.187000'],
+              'last_updated_date': ['2022-11-03'],
+              'last_updated_time': ['14:20:52.187000'],
+              'staff_id': [12], 'counterparty_id': [11],
+              'item_code': ['ZDOI5EA'], 'item_quantity': [371],
+              'item_unit_price': [361.39], 'currency_id': [2],
+              'agreed_delivery_date': ['2022-11-09'],
+              'agreed_payment_date': ['2022-11-07'],
+              'agreed_delivery_location_id': 6})
+    purchase_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/purchase_order.csv', encoding='utf-8')
+    res_df = transformer.transform_purchase_order(purchase_order_df)
+    assert res_df.shape == expected_fact_purchase_shape
+    assert_frame_equal(res_df.iloc[:1], expected_fact_purchase)
 
 
 def test_transform_raises_error_if_env_var_not_set(info, unset_set_env):

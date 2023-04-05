@@ -39,6 +39,18 @@ def transform_handler(event, context):
     transformer.store_as_parquet(
         'sales_order', transformer.transform_sales_order(
             transformer.read_csv('sales_order')))
+    transformer.store_as_parquet(
+        'payment_type', transformer.transform_payment_type(
+            transformer.read_csv('payment_type')))
+    transformer.store_as_parquet(
+        'transaction', transformer.transform_transaction(
+            transformer.read_csv('transaction')))
+    transformer.store_as_parquet(
+        'payment', transformer.transform_payment(
+            transformer.read_csv('payment')))
+    transformer.store_as_parquet(
+        'purchase_order', transformer.transform_purchase_order(
+            transformer.read_csv('purchase_order')))
 
     # call_loader_lambda(loader_lambda_json, event, context)
 
@@ -254,6 +266,51 @@ class Transformer:
         df_transaction = df_transaction.drop(
             columns=['created_at', 'last_updated'])
         return df_transaction
+    
+    def transform_payment(self, df_payment):
+        df = pd.DataFrame()
+        df['payment_record_id'] = df_payment.reset_index().index + 1
+        df['payment_id'] = df_payment['payment_id']
+        df['created_date'] = pd.to_datetime(
+            df_payment['created_at']).dt.date.astype(str)
+        df['created_time'] = pd.to_datetime(
+            df_payment['created_at']).dt.time.astype(str)
+        df['last_updated_date'] = pd.to_datetime(
+            df_payment['last_updated']).dt.date.astype(str)
+        df['last_updated_time'] = pd.to_datetime(
+            df_payment['last_updated']).dt.time.astype(str)
+        df['transaction_id'] = df_payment['transaction_id']
+        df['counterparty_id'] = df_payment['counterparty_id']
+        df['payment_amount'] = df_payment['payment_amount']
+        df['currency_id'] = df_payment['currency_id']
+        df['payment_type_id'] = df_payment['payment_type_id']
+        df['paid'] = df_payment['paid']
+        df['payment_date'] = df_payment['payment_date']
+        return df
+
+    def transform_purchase_order(self, df_purchase_order):
+        df = pd.DataFrame()
+        df['purchase_record_id'] = df_purchase_order.reset_index().index + 1
+        df['purchase_order_id'] = df_purchase_order['purchase_order_id']
+        df['created_date'] = pd.to_datetime(
+            df_purchase_order['created_at']).dt.date.astype(str)
+        df['created_time'] = pd.to_datetime(
+            df_purchase_order['created_at']).dt.time.astype(str)
+        df['last_updated_date'] = pd.to_datetime(
+            df_purchase_order['last_updated']).dt.date.astype(str)
+        df['last_updated_time'] = pd.to_datetime(
+            df_purchase_order['last_updated']).dt.time.astype(str)
+        df['staff_id'] = df_purchase_order['staff_id']
+        df['counterparty_id'] = df_purchase_order['counterparty_id']
+        df['item_code'] = df_purchase_order['item_code']
+        df['item_quantity'] = df_purchase_order['item_quantity']
+        df['item_unit_price'] = df_purchase_order['item_unit_price']
+        df['currency_id'] = df_purchase_order['currency_id']
+        df['agreed_delivery_date'] = df_purchase_order['agreed_delivery_date']
+        df['agreed_payment_date'] = df_purchase_order['agreed_payment_date']
+        df['agreed_delivery_location_id'] = \
+            df_purchase_order['agreed_delivery_location_id']
+        return df
 
 
 # t = Transformer('', '')

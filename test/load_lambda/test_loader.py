@@ -21,7 +21,7 @@ TEST_DATA_PATH = f'{script_dir}/data'
 
 TEST_DB = 'test.db'
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def aws_credentials():
     """Mocked AWS Credentials for moto."""
     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
@@ -45,6 +45,18 @@ def s3(aws_credentials):
         yield s3_client
 
 
+@pytest.fixture(scope="module")
+def s3_mod(aws_credentials):
+    with mock_s3():
+        s3_client = boto3.client("s3")
+        s3_client.create_bucket(Bucket=PROCESSED_BUCKET_NAME)
+        for file_name in Loader.FILE_LIST.keys():
+            with open(f'{TEST_DATA_PATH}/{file_name}.parq', 'rb') as f:
+                s3_client.put_object(Bucket=PROCESSED_BUCKET_NAME,
+                                     Key=f'{file_name}', Body=f)
+        yield s3_client
+
+
 @pytest.fixture(scope='function')
 def loader(s3):
     loader = Loader(PROCESSED_BUCKET_NAME)
@@ -57,15 +69,39 @@ def loader(s3):
 
 
 @pytest.fixture(scope='function')
-def live_loader(s3):
+def address_loader(s3):
     loader = Loader(PROCESSED_BUCKET_NAME)
     loader.connect_db(**json.loads(os.environ.get('OI_TOTESYS_DW_INFO')))
-    with loader.engine.begin() as conn:
-        conn.execute(text('DELETE FROM dim_location'))
+    for table in list(Loader.FILE_LIST.values())[::-1]:
+        loader.delete_table(table)
     yield loader
     with loader.engine.begin() as conn:
         conn.execute(text('DELETE FROM dim_location'))
     loader.close()
+
+
+@pytest.fixture(scope='module')
+def all_loader(s3_mod):
+    loader = Loader(PROCESSED_BUCKET_NAME)
+    loader.connect_db(**json.loads(os.environ.get('OI_TOTESYS_DW_INFO')))
+    for table in list(Loader.FILE_LIST.values())[::-1]:
+        loader.delete_table(table)
+    loader_handler({}, None)
+    yield loader
+    for table in list(Loader.FILE_LIST.values())[::-1]:
+        loader.delete_table(table)
+    loader.close()
+
+
+# In same table order as Loader.FILE_LIST.values
+EXPECTED_ROW_COUNTS = [30, 110, 20, 20, 3, 180, 4, 2437, 835, 2437, 1602]
+
+
+@pytest.fixture(scope='module',
+                params=zip(Loader.FILE_LIST.values(), EXPECTED_ROW_COUNTS),
+                ids=lambda x: x[0])
+def table_info(request):
+    yield request.param
 
 
 def test_read_s3_parquet_returns_data_frame(loader):
@@ -91,27 +127,26 @@ def test_read_s3_parquet_returns_correct_data(loader):
     assert_frame_equal(res_df.iloc[:1], expected_fact_sales)
 
 
-def test_load_address(live_loader):
-    live_loader.load_table('address', 'dim_location')
-    with live_loader.conn as conn:
+def test_load_address(address_loader):
+    address_loader.load_table('address', 'dim_location')
+    with address_loader.conn as conn:
         res = conn.execute(text('SELECT * FROM dim_location'))
         rows = res.fetchall()
     assert len(rows) == 30
 
 
-def test_delete_address(live_loader):
-    live_loader.load_table('address', 'dim_location')
-    live_loader.delete_table('dim_location')
-    with live_loader.conn as conn:
+def test_delete_address(address_loader):
+    address_loader.load_table('address', 'dim_location')
+    address_loader.delete_table('dim_location')
+    with address_loader.conn as conn:
         res = conn.execute(text('SELECT * FROM dim_location'))
         rows = res.fetchall()
     assert len(rows) == 0
 
 
-def test_loader_handler(live_loader):
-    loader_handler({}, None)
-    for table_name in Loader.FILE_LIST.values():
-        with live_loader.engine.begin() as conn:
-            res = conn.execute(text(f'SELECT * FROM {table_name}'))
-            rows = res.fetchall()
-        assert len(rows) == 0
+def test_loader_handler(all_loader, table_info):
+    table_name, expected_row_count = table_info
+    with all_loader.engine.begin() as conn:
+        res = conn.execute(text(f'SELECT * FROM {table_name}'))
+        rows = res.fetchall()
+    assert len(rows) == expected_row_count
