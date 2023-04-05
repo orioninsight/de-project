@@ -42,6 +42,18 @@ def transform_handler(event, context):
     transformer.store_as_parquet(
         'sales_order', transformer.transform_sales_order(
             transformer.read_csv('sales_order')))
+    transformer.store_as_parquet(
+        'payment_type', transformer.transform_payment_type(
+            transformer.read_csv('payment_type')))
+    transformer.store_as_parquet(
+        'transaction', transformer.transform_transaction(
+            transformer.read_csv('transaction')))
+    transformer.store_as_parquet(
+        'payment', transformer.transform_payment(
+            transformer.read_csv('payment')))
+    transformer.store_as_parquet(
+        'purchase_order', transformer.transform_purchase_order(
+            transformer.read_csv('purchase_order')))
 
     call_loader_lambda(loader_lambda_json['load_lambda_arn'], event, context)
 
@@ -110,7 +122,7 @@ class Transformer:
             return df
         except Exception as e:
             logger.error(f'An error occurred reading csv file: {e}')
-            raise RuntimeError(e)
+            raise RuntimeError()
 
     def store_as_parquet(self, file_name, df):
         """store a dataframe as a Parquet file in a specified S3 bucket."""
@@ -150,7 +162,7 @@ class Transformer:
             df_currency_info = pd.read_csv(f'{dir_path}/currency.csv')
         except Exception as e:
             logger.error(f'Could not read currency.csv: {e}')
-            raise RuntimeError(e)
+            raise RuntimeError()
         df_currency = df_currency.join(
             df_currency_info.set_index('currency_code'),
             on='currency_code', how='left')
@@ -172,7 +184,7 @@ class Transformer:
         """create a dataframe of dates between two specified dates."""
         df = pd.DataFrame(pd.date_range(
             from_date_string, to_date_string), columns=['date'])
-        df['date_id'] = df['date'].dt.strftime('%Y%m%d').astype(int)
+        df['date_id'] = df['date'].dt.strftime('%Y-%m-%d')
         df['year'] = df['date'].dt.year
         df['month'] = df['date'].dt.month
         df['day'] = df['date'].dt.day
@@ -274,3 +286,63 @@ class Transformer:
             msg = f'An error occurred merging tables: {e}'
             logger.error(msg)
             raise Exception(msg)
+
+    def transform_payment_type(self, df_payment_type):
+        df_payment_type = df_payment_type.drop(
+            columns=['created_at', 'last_updated'])
+        return df_payment_type
+
+    def transform_transaction(self, df_transaction):
+        df_transaction = df_transaction.drop(
+            columns=['created_at', 'last_updated'])
+        return df_transaction
+
+    def transform_payment(self, df_payment):
+        df = pd.DataFrame()
+        df['payment_record_id'] = df_payment.reset_index().index + 1
+        df['payment_id'] = df_payment['payment_id']
+        df['created_date'] = pd.to_datetime(
+            df_payment['created_at']).dt.date.astype(str)
+        df['created_time'] = pd.to_datetime(
+            df_payment['created_at']).dt.time.astype(str)
+        df['last_updated_date'] = pd.to_datetime(
+            df_payment['last_updated']).dt.date.astype(str)
+        df['last_updated_time'] = pd.to_datetime(
+            df_payment['last_updated']).dt.time.astype(str)
+        df['transaction_id'] = df_payment['transaction_id']
+        df['counterparty_id'] = df_payment['counterparty_id']
+        df['payment_amount'] = df_payment['payment_amount']
+        df['currency_id'] = df_payment['currency_id']
+        df['payment_type_id'] = df_payment['payment_type_id']
+        df['paid'] = df_payment['paid']
+        df['payment_date'] = df_payment['payment_date']
+        return df
+
+    def transform_purchase_order(self, df_purchase_order):
+        df = pd.DataFrame()
+        df['purchase_record_id'] = df_purchase_order.reset_index().index + 1
+        df['purchase_order_id'] = df_purchase_order['purchase_order_id']
+        df['created_date'] = pd.to_datetime(
+            df_purchase_order['created_at']).dt.date.astype(str)
+        df['created_time'] = pd.to_datetime(
+            df_purchase_order['created_at']).dt.time.astype(str)
+        df['last_updated_date'] = pd.to_datetime(
+            df_purchase_order['last_updated']).dt.date.astype(str)
+        df['last_updated_time'] = pd.to_datetime(
+            df_purchase_order['last_updated']).dt.time.astype(str)
+        df['staff_id'] = df_purchase_order['staff_id']
+        df['counterparty_id'] = df_purchase_order['counterparty_id']
+        df['item_code'] = df_purchase_order['item_code']
+        df['item_quantity'] = df_purchase_order['item_quantity']
+        df['item_unit_price'] = df_purchase_order['item_unit_price']
+        df['currency_id'] = df_purchase_order['currency_id']
+        df['agreed_delivery_date'] = df_purchase_order['agreed_delivery_date']
+        df['agreed_payment_date'] = df_purchase_order['agreed_payment_date']
+        df['agreed_delivery_location_id'] = \
+            df_purchase_order['agreed_delivery_location_id']
+        return df
+
+
+# t = Transformer('', '')
+# df = t.create_dim_date()
+# write('/tmp/date.parq', df)

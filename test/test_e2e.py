@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 import pytest
-from moto import mock_s3
 import os
 import boto3
 from unittest.mock import patch
@@ -16,28 +15,6 @@ PROCESSED_BUCKET_NAME = f'''test-processed-bucket-{
    int(datetime.now().timestamp())}'''
 
 
-# @pytest.fixture(scope="function")
-# def aws_credentials():
-#     """Mocked AWS Credentials for moto."""
-#     env_vars = ['AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY',
-#                 'AWS_SECURITY_TOKEN', 'AWS_SESSION_TOKEN',
-#                 'AWS_DEFAULT_REGION']
-#     old_env_vars = {var: os.environ.get(var, None) for var in env_vars}
-#     #print(old_env_vars)
-
-#     os.environ["AWS_ACCESS_KEY_ID"] = "testing"
-#     os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
-#     os.environ["AWS_SECURITY_TOKEN"] = "testing"
-#     os.environ["AWS_SESSION_TOKEN"] = "testing"
-#     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-#     yield
-#     for var in env_vars:
-#         if old_env_vars[var] is not None:
-#             os.environ[var] = old_env_vars[var]
-#         else:
-#             del os.environ[var]
-
-
 @pytest.fixture(scope="module")
 def s3():
     s3_client = boto3.client("s3")
@@ -50,19 +27,6 @@ def s3():
         for obj in objs:
             s3_client.delete_object(Bucket=bucket_name, Key=obj['Key'])
         s3_client.delete_bucket(Bucket=bucket_name)
-
-# @pytest.fixture(scope="function")
-# def s3():
-#     s3_client = boto3.client("s3")
-#     bucket_list = [INGESTION_BUCKET_NAME, PROCESSED_BUCKET_NAME]
-#     for bucket in bucket_list:
-#         s3_client.create_bucket(Bucket=bucket)
-#     yield s3_client
-#     for bucket in bucket_list:
-#         objs = s3_client.list_objects_v2(Bucket=bucket)['Contents']
-#         for obj in objs:
-#             s3_client.delete_object(Bucket=bucket, Key=obj['Key'])
-#         s3_client.delete_bucket(Bucket=bucket)
 
 
 @pytest.fixture(
@@ -92,7 +56,25 @@ def s3():
                          'counterparty_id', 'units_sold', 'unit_price',
                          'currency_id', 'design_id', 'agreed_payment_date',
                          'agreed_delivery_date',
-                         'agreed_delivery_location_id'})
+                         'agreed_delivery_location_id'}),
+        ('purchase_order', {'purchase_record_id', 'purchase_order_id',
+                            'created_date',
+                            'created_time', 'last_updated_date',
+                            'last_updated_time',
+                            'staff_id', 'item_code',
+                            'counterparty_id', 'item_quantity',
+                            'item_unit_price',
+                            'currency_id', 'agreed_payment_date',
+                            'agreed_delivery_date',
+                            'agreed_delivery_location_id'}),
+        ('payment', {'payment_record_id', 'payment_id', 'created_date',
+                     'created_time', 'last_updated_date',
+                     'last_updated_time', 'transaction_id',
+                     'payment_amount', 'counterparty_id', 'payment_type_id',
+                     'paid', 'currency_id', 'payment_date'}),
+        ('payment_type', {'payment_type_id', 'payment_type_name'}),
+        ('transaction', {'transaction_id', 'transaction_type',
+                         'sales_order_id', 'purchase_order_id'})
     ], ids=lambda x: x[0])
 def parquet_file(request):
     key, cols = request.param
@@ -113,7 +95,6 @@ def env_vars():
         {'s3_bucket_name': PROCESSED_BUCKET_NAME})
     os.environ['OI_LOAD_LAMBDA_INFO'] = json.dumps(
         {'load_lambda_arn': 'AN ARN'})
-
 
 
 @patch('src.extraction_lambda.extract_db.call_transform_lambda',
