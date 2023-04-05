@@ -45,8 +45,6 @@ This ETL pipeline provides a reliable way to extract data from the Totesys datab
 
 ## Get started
 
-````bash
-
 <!-- install following before running the file -->
 ## Install
 ```bash
@@ -55,14 +53,18 @@ This ETL pipeline provides a reliable way to extract data from the Totesys datab
     make lambda-deployment-packages
 ````
 
-Add a secret with ID **OI_TOTESYS_DB_INFO** to AWS Secrets Manager in the following format, **replacing values**:
+## Environmental variables / secret manager 
+
+
+Add secrets with ID **OI_TOTESYS_DB_INFO** and **OI_TOTESYS_DW_INFO** to AWS Secrets Manager in the following format, **replacing values**:
 ```
     {"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}
 ```
 
-If only testing locally (not deploying via terraform), export variable **OI_TOTESYS_DB_INFO** to provide database credentials in the following format to enable unit tests to run, **replacing values**:
+If only testing locally (not deploying via terraform), export variables **OI_TOTESYS_DB_INFO** and **OI_TOTESYS_DW_INFO** to provide database credentials in the following format to enable unit tests to run, **replacing values**:
 ```bash
     export OI_TOTESYS_DB_INFO='{"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}'
+    export OI_TOTESYS_DW_INFO='{"host":"HOST","port":"PORT","user":"USER","password":"PASSWORD","database":"DB"}'
 ```
 
 Configure AWS credentials using AWS CLI
