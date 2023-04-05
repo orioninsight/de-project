@@ -11,7 +11,8 @@ logger.setLevel(logging.INFO)
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-''' reads environment variables for S3 bucket names, reads CSV files, transforms the dataframes, and stores the dataframes as Parquet files in the specified S3 bucket.'''
+''' reads environment variables for S3 bucket names, reads CSV files,
+transforms the dataframes, and stores the dataframes as Parquet files in the specified S3 bucket.'''
 
 
 def transform_handler(event, context):
@@ -58,7 +59,8 @@ def call_loader_lambda(fnArn, event, context):
     logger.info(f'Loader lambda responded with {res}')
 
 
-'''load environment variables as JSON and check that the expected keys are present.'''
+'''load environment variables as JSON and check that the expected keys are 
+present.'''
 
 
 def load_env_var(env_key, expected_json_keys):
@@ -86,9 +88,10 @@ class Transformer:
         self.s3_bucket_name = bucket_name
         self.s3_processed_bucket_name = processed_bucket_name
 
-    '''list the expected CSV files and raise an exception if any are missing.'''
+    '''list the expected CSV files and raise an exception if any are 
+    missing.'''
 
-   def list_csv_files(self):
+    def list_csv_files(self):
         ingestion_csv_files = self.s3_client.list_objects_v2(
             Bucket=self.s3_bucket_name)['Contents']
         for file in Transformer.FILE_LIST:
@@ -101,7 +104,7 @@ class Transformer:
 
     '''read a CSV file from S3 and return a Pandas dataframe.'''
 
-   def read_csv(self, key):
+    def read_csv(self, key):
         try:
             obj = self.s3_client.get_object(Bucket=self.s3_bucket_name,
                                             Key=key)
@@ -113,7 +116,7 @@ class Transformer:
 
     '''store a dataframe as a Parquet file in a specified S3 bucket.'''
 
-   def store_as_parquet(self, file_name, df):
+    def store_as_parquet(self, file_name, df):
         if not isinstance(df, pd.DataFrame):
             msg = 'ERROR: object not a dataframe'
             logger.error(msg)
@@ -141,10 +144,11 @@ class Transformer:
             msg = f'An error occurred writing parquet file to bucket: {e}'
             logger.error(msg)
             raise Exception(msg)
-        
-    '''transform the currency dataframe by joining it with a reference dataframe and dropping some columns.'''
 
-   def transform_currency(self, df_currency):
+    '''transform the currency dataframe by joining it with a reference 
+    dataframe and dropping some columns.'''
+
+    def transform_currency(self, df_currency):
         try:
             df_currency_info = pd.read_csv(f'{dir_path}/currency.csv')
         except Exception as e:
@@ -157,18 +161,19 @@ class Transformer:
 
     '''transform the design dataframe by dropping some columns.'''
 
-   def transform_design(self, df_design):
+    def transform_design(self, df_design):
         return df_design.drop(columns=['created_at', 'last_updated'])
 
-    '''transform the address dataframe by dropping some columns and renaming a column.'''
+    '''transform the address dataframe by dropping some columns and renaming 
+    a column.'''
 
-   def transform_address(self, df_address):
+    def transform_address(self, df_address):
         return df_address.drop(columns=['created_at', 'last_updated']).rename(
             columns={'address_id': 'location_id'})
 
     '''create a dataframe of dates between two specified dates.'''
 
-   def create_dim_date(self, from_date_string='2022-11-3',
+    def create_dim_date(self, from_date_string='2022-11-3',
                         to_date_string='2023-5-1'):
         df = pd.DataFrame(pd.date_range(
             from_date_string, to_date_string), columns=['date'])
@@ -182,7 +187,8 @@ class Transformer:
         df['quarter'] = df['date'].dt.quarter
         return df.loc[:, df.columns != 'date']
 
-    '''transforms a pandas DataFrame of sales orders into a format suitable for insertion into a star schema. '''
+    '''transforms a pandas DataFrame of sales orders into a format suitable 
+    for insertion into a star schema. '''
 
     def transform_sales_order(self, df_sales_order):
         df = pd.DataFrame()
@@ -209,7 +215,8 @@ class Transformer:
 
         return df
 
-    ''' transforms a pandas DataFrame of staff and a pandas DataFrame of departments into a format suitable for insertion into a star schema.'''
+    ''' transforms a pandas DataFrame of staff and a pandas DataFrame of 
+    departments into a format suitable for insertion into a star schema.'''
 
     def transform_staff(self, df_staff, df_department):
         staff_table = df_staff.drop(
@@ -220,7 +227,9 @@ class Transformer:
             staff_table, department_table, on='department_id')
         return merged_table.drop(columns=['department_id'])
 
-    '''Transforms a pandas DataFrame of counterparty data and a pandas DataFrame of address data into a format suitable for insertion into a star schema.'''
+    '''Transforms a pandas DataFrame of counterparty data and a pandas 
+    DataFrame of address data into a format suitable for insertion into a star schema.'''
+
     def transform_counterparty(self, df_counterparty, df_address):
 
         try:
@@ -268,3 +277,65 @@ class Transformer:
             msg = f'An error occurred merging tables: {e}'
             logger.error(msg)
             raise Exception(msg)
+
+    '''transform the payment dataframe by dropping some columns.'''
+
+    def transform_payment_type(self, df_payment):
+        return df_payment.drop(columns=['created_at', 'last_updated'])
+
+    '''transform the transaction dataframe by dropping some columns.'''
+
+    def transform_transaction(self, df_transaction):
+        return df_transaction.drop(columns=['created_at', 'last_updated'])
+
+    '''transforms a pandas DataFrame of fact_payment into a format suitable 
+    for insertion into a star schema. '''
+
+    def transform_payment(self, df_payment):
+        df = pd.DataFrame()
+        df['payment_record_id'] = df_payment.reset_index().index + 1
+        df['payment_id'] = df_payment['payment_id']
+        df['created_date'] = pd.to_datetime(
+            df_payment['created_at']).dt.date.astype(str)
+        df['created_time'] = pd.to_datetime(
+            df_payment['created_at']).dt.time.astype(str)
+        df['last_updated_date'] = pd.to_datetime(
+            df_payment['last_updated']).dt.date.astype(str)
+        df['last_updated'] = pd.to_datetime(
+            df_payment['last_updated']).dt.time.astype(str)
+        df['transaction_id'] = df_payment['transaction_id']
+        df['counterparty_id'] = df_payment['counterparty_id']
+        df['payment_amount'] = df_payment['payment_amount']
+        df['currency_id'] = df_payment['currency_id']
+        df['payment_type_id'] = df_payment['payment_type_id']
+        df['paid'] = df_payment['paid']
+        df['payment_date'] = df_payment['payment_date']
+
+        return df
+
+    '''transforms a pandas DataFrame of fact_purchase_order into a format 
+    suitable for insertion into a star schema. '''
+
+    def transform_purchase_order(self, df_purchase_order):
+        df = pd.DataFrame()
+        df['purchase_record_id'] = df_purchase_order.reset_index().index + 1
+        df['purchase_order_id'] = df_purchase_order['purchase_order_id']
+        df['created_date'] = pd.to_datetime(
+            df_purchase_order['created_at']).dt.date.astype(str)
+        df['created_time'] = pd.to_datetime(
+            df_purchase_order['created_at']).dt.time.astype(str)
+        df['last_updated_date'] = pd.to_datetime(
+            df_purchase_order['last_updated']).dt.date.astype(str)
+        df['last_updated_time'] = pd.to_datetime(
+            df_purchase_order['last_updated']).dt.time.astype(str)
+        df['staff_id'] = df_purchase_order['staff_id']
+        df['counterparty_id'] = df_purchase_order['counterparty_id']
+        df['item_code'] = df_purchase_order['item_code']
+        df['item_quantity'] = df_purchase_order['item_quantity']
+        df['item_unit_price'] = df_purchase_order['item_unit_price']
+        df['currency_id'] = df_purchase_order['currency_id']
+        df['agreed_delivery_date'] = df_purchase_order['agreed_delivery_date']
+        df['agreed_payment_date'] = df_purchase_order['agreed_payment_date']
+        df['agreed_delivery_location_id'] = df_purchase_order['agreed_delivery_location_id']
+
+        return df

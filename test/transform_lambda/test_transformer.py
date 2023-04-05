@@ -43,7 +43,7 @@ def info():
     os.environ['OI_STORER_INFO'] = json.dumps(
         {"s3_bucket_name": BUCKET_NAME})
     os.environ['OI_PROCESSED_INFO'] = json.dumps(
-            {"s3_bucket_name": PROCESSED_BUCKET_NAME})
+        {"s3_bucket_name": PROCESSED_BUCKET_NAME})
 
 
 @pytest.fixture(scope="module")
@@ -72,6 +72,8 @@ def transformer(s3):
     ('currency', (3, 3)),
     ('design', (107, 4)),
     ('address', (30, 8)),
+    ('payment', (2351, 13)),
+    ('purchase_order', (807, 15))
 ], ids=lambda x: x[0])
 def s3_file(request, transformer):
     key, shape = request.param
@@ -335,3 +337,63 @@ def test_load_env_var_raises_error_if_env_var_contains_invalid_keys():
     os.environ[env_key] = '{"HELL":"ORION", "WOLD":"INSIGHTS"}'
     with pytest.raises(Exception, match='Error loading JSON for env var'):
         load_env_var(env_key, expected_keys)
+
+
+def test_transform_payment_type_returns_correct_data_frame_structure(transformer):
+    expected_df_shape = (4, 2)
+    expected_df_cols = {'payment_type_id', 'payment_type_name'}
+
+    payment_type_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/payment_type.csv', encoding='utf-8')
+
+    res_df = transformer.transform_payment_type(payment_type_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_transaction_returns_correct_data_frame_structure
+
+
+(transformer):
+    expected_df_shape = (2351, 4)
+    expected_df_cols = {'transaction_id', 'transaction_type',
+                        'sales_order_id', 'purchase_order_id'}
+
+    transaction_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/transaction.csv', encoding='utf-8')
+
+    res_df = transformer.transform_design(transaction_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_payment_returns_correct_data_frame(transformer):
+    expected_df_shape = (2351, 13)
+    expected_df_cols = {'payment_record_id', 'payment_id',
+                        'created_date', 'created_time',
+                        'last_updated_date',
+                        'last_updated', 'transaction_id',
+                        'counterparty_id', 'payment_amount', 'currency_id',
+                        'payment_type_id', 'paid', 'payment_date'}
+    payment_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/payment.csv', encoding='utf-8')
+    res_df = transformer.transform_payment(payment_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
+
+
+def test_transform_purchase_order_returns_correct_data_frame(transformer):
+    expected_df_shape = (807, 15)
+    expected_df_cols = {'purchase_record_id', 'purchase_order_id',
+                        'created_date', 'created_time',
+                        'last_updated_date',
+                        'last_updated_time', 'staff_id',
+                        'counterparty_id', 'item_code', 'item_quantity',
+                        'item_unit_price', 'currency_id',
+                        'agreed_delivery_date', 'agreed_payment_date',
+                        'agreed_delivery_location_id'}
+    purchase_order_df = pd.read_csv(
+        f'{TEST_DATA_PATH}/purchase_order.csv', encoding='utf-8')
+    res_df = transformer.transform_purchase_order(purchase_order_df)
+    assert res_df.shape == expected_df_shape
+    assert set(res_df.columns) == expected_df_cols
