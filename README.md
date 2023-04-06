@@ -122,3 +122,12 @@ If backend bucket for terraform does not already exist follow these steps:
 ```
 
 This happens automatically as part of the github actions deployment and is only necessary when deploying via terraform on a local machine.
+
+## Outcome 
+
+Totesys DB 
+![totesysdb][(https://github.com/orioninsight/de-project/blob/main/architecture_diagrams/png/architecture_diagram.png](https://github.com/orioninsight/de-project/blob/main/schema/DB.png)
+
+Remodelled into the starschema and loaded into the data warehouse 
+![datawarehouse][(https://github.com/orioninsight/de-project/blob/main/schema/Sales.png)
+
