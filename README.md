@@ -125,9 +125,12 @@ This happens automatically as part of the github actions deployment and is only 
 
 ## Outcome 
 
-Totesys DB 
-![totesysdb][(https://github.com/orioninsight/de-project/blob/main/architecture_diagrams/png/architecture_diagram.png](https://github.com/orioninsight/de-project/blob/main/schema/DB.png)
+Bellow is the Totesys database at the start of the pipeline:
 
-Remodelled into the starschema and loaded into the data warehouse 
-![datawarehouse][(https://github.com/orioninsight/de-project/blob/main/schema/Sales.png)
+![totesysdb](https://github.com/orioninsight/de-project/blob/main/schema/DB.png)
+
+The above database is remodeled into the star schema bellow and loaded into the data warehouse:
+
+
+![datawarehouse](https://github.com/orioninsight/de-project/blob/main/schema/Sales.png)
 
