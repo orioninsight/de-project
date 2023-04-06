@@ -114,8 +114,8 @@ resource "aws_lambda_function" "load_lambda" {
   handler          = var.load_lambda_handler
   runtime          = "python3.9"
   source_code_hash = filebase64sha256(data.archive_file.load_lambda_archive.output_path)
-  timeout          = 30
-  memory_size      = 192
+  timeout          = 900
+  memory_size      = 512
 
   # Here's where we specify the code location
   s3_bucket = aws_s3_bucket.code_bucket.bucket

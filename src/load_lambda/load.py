@@ -15,7 +15,7 @@ logger.setLevel(logging.INFO)
 def loader_handler(event, context):
     dw_secret_json = load_env_var('OI_TOTESYS_DW_INFO',
                                   ['host', 'port', 'user',
-                                   'password', 'database'], False)
+                                   'password', 'database'], True)
     s3_processed_bucket_name = load_env_var(
         'OI_PROCESSED_INFO', ['s3_bucket_name'])['s3_bucket_name']
     loader = Loader(s3_processed_bucket_name)

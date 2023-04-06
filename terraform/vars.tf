@@ -31,7 +31,7 @@ variable "transform_lambda_handler" {
 # lambda handler for load lambda
 variable "load_lambda_handler" {
   type    = string
-  default = "load.load_lambda_handler"
+  default = "load.loader_handler"
 }
 
 # email for ingestion zone lambda alerting

@@ -304,6 +304,23 @@ resource "aws_iam_policy" "load_lamba_cw_policy" {
   policy      = data.aws_iam_policy_document.load_lambda_cw_document.json
 }
 
+#creates policy locally to allow load_lambda lambda to access specific datawarehouse secret from secrets manager 
+data "aws_iam_policy_document" "load_lambda_secretsmanager_document" {
+  statement {
+
+    actions = ["secretsmanager:GetSecretValue"]
+
+    resources = [
+      "${data.aws_secretsmanager_secret.datawarehouse_secret.arn}"
+    ]
+  }
+}
+
+# creates policy for load lambda to access datawarehouse secret secretsmanager in IAM
+resource "aws_iam_policy" "load_lambda_secretsmanager_policy" {
+  name_prefix = "load-lambda-secretsmanager-policy-"
+  policy      = data.aws_iam_policy_document.load_lambda_secretsmanager_document.json
+}
 # creates load-lambda role 
 resource "aws_iam_role" "load_lambda_role" {
   name_prefix        = "role-load-lambda-"
@@ -338,3 +355,10 @@ resource "aws_iam_role_policy_attachment" "load_lambda_cw_policy_attachment" {
   role       = aws_iam_role.load_lambda_role.name
   policy_arn = aws_iam_policy.load_lamba_cw_policy.arn
 }
+
+# attach secrets manager policy to load-lambda role
+resource "aws_iam_role_policy_attachment" "load_lambda_secretsmanager_policy_attachment" {
+  role       = aws_iam_role.load_lambda_role.name
+  policy_arn = aws_iam_policy.load_lambda_secretsmanager_policy.arn
+}
+
