@@ -122,3 +122,15 @@ If backend bucket for terraform does not already exist follow these steps:
 ```
 
 This happens automatically as part of the github actions deployment and is only necessary when deploying via terraform on a local machine.
+
+## Outcome 
+
+Bellow is the Totesys database at the start of the pipeline:
+
+![totesysdb](https://github.com/orioninsight/de-project/blob/main/schema/DB.png)
+
+The above database is remodeled into the star schema bellow and loaded into the data warehouse:
+
+
+![datawarehouse](https://github.com/orioninsight/de-project/blob/main/schema/Sales.png)
+
